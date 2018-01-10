@@ -33,7 +33,7 @@ if [ $? -ne 0 ]; then
     	fi
 fi
 
-SCRIPT=$0
+SCRIPT=$(readlink -e $0)
 echo "  Create file $SERVICE_FILE"
 sudo bash -c 'cat << EOF > "'"$SERVICE_FILE"'"
 [Unit]
@@ -89,7 +89,7 @@ echo "  Disable service"
 sudo systemctl stop $SERVICE
 echo "  Remove files"
 sudo rm $SERVICE_FILE
-sudo rm $LOGROTATE_FILE
+sudo rm /var/log/iperf3*
 sudo rm $LOG_FILE
 echo "  Run daemon-reload"
 sudo systemctl daemon-reload

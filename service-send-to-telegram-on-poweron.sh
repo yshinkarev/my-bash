@@ -1,6 +1,7 @@
 #!/bin/bash
 
 SERVICE=send-to-telegram-on-poweron.service
+SERVICE_FILE=/etc/systemd/system/$SERVICE
 
 ########################################
 
@@ -20,10 +21,9 @@ EOF
 ########################################
 
 installService() {
-FILE=/etc/systemd/system/$SERVICE
-SCRIPT=$0
-echo "  Create file $FILE"
-sudo bash -c 'cat << EOF > "'"$FILE"'"
+SCRIPT=$(readlink -e $0)
+echo "  Create file $SERVICE_FILE"
+sudo bash -c 'cat << EOF > "'"$SERVICE_FILE"'"
 [Unit]
 Description=Send to telegram on power on
 
@@ -36,7 +36,7 @@ WantedBy=multi-user.target
 EOF'
 
 echo "  Set file permissions"
-sudo chmod 644 $FILE
+sudo chmod 644 $SERVICE_FILE
 
 echo "  Run daemon-reload"
 sudo systemctl daemon-reload
