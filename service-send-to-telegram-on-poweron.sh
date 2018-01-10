@@ -4,6 +4,21 @@ SERVICE=send-to-telegram-on-poweron.service
 
 ########################################
 
+showHelp() {
+cat << EOF
+Usage: echo $(basename $0) [COMMAND]
+Send message to telegram on power on
+
+  --install     Install service
+  --uninstall   Remove service
+  --status      Show runtime status of service
+  --start       Start service
+  --stop        Stop service
+EOF
+}
+
+########################################
+
 installService() {
 FILE=/etc/systemd/system/$SERVICE
 SCRIPT=$0
@@ -51,6 +66,18 @@ sudo systemctl reset-failed
 
 ########################################
 
+startService() {
+sudo systemctl start $SERVICE	
+}
+
+########################################
+
+stopService() {
+sudo systemctl stop $SERVICE	
+}
+
+########################################
+
 for arg in "$@"; do
 	case $arg in
 	    --install)
@@ -65,6 +92,22 @@ for arg in "$@"; do
 	  	statusService
 	  	exit 0
 	  	;;
+	    --start)
+	  	startService
+	  	exit 0
+	  	;;
+	    --stop)
+	  	stopService
+	  	exit 0
+	  	;;
+	    --help)
+		showHelp
+		exit 0
+		;;
+	    *)
+	      echo "Unknown argument: $arg"
+	      showHelp
+	      exit 1
 	  esac	 
 	done
 ########################################
