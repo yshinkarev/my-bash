@@ -90,7 +90,6 @@ sudo systemctl stop $SERVICE
 echo "  Remove files"
 sudo rm $SERVICE_FILE
 sudo rm /var/log/iperf3*
-sudo rm $LOG_FILE
 echo "  Run daemon-reload"
 sudo systemctl daemon-reload
 echo "  Run reset-failed"
