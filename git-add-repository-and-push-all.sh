@@ -7,5 +7,5 @@ if [ -z "$URL" ]; then
 fi
 
 git remote set-url origin --add $URL
-git fetch --all
-git pull --all
+git push -u origin --all
+git push -u origin --tags
