@@ -58,7 +58,7 @@ sudo bash -c 'cat << EOF > "'"$LOGROTATE_FILE"'"
         compress
         delaycompress
         notifempty
-        create 640 root adm        
+        create 640 root adm
         endscript
 }
 EOF'
@@ -99,13 +99,13 @@ sudo systemctl reset-failed
 ########################################
 
 startService() {
-sudo systemctl start $SERVICE	
+sudo systemctl start $SERVICE
 }
 
 ########################################
 
 stopService() {
-sudo systemctl stop $SERVICE	
+sudo systemctl stop $SERVICE
 }
 
 ########################################
@@ -140,7 +140,7 @@ for arg in "$@"; do
 	      echo "Unknown argument: $arg"
 	      showHelp
 	      exit 1
-	  esac	 
+	  esac
 	done
 ########################################
 
