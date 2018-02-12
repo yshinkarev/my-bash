@@ -41,7 +41,7 @@ targetPath=$targetDir/$dirName-$(date +"%Y.%m.%d_%H-%M-%S").tar.gz
 echo "$dir -> $targetPath"
 
 if [ -z "$excludeSize" ]; then
-	tar hcf - "$dir" | ~/bin/compress/pigz -9 --quiet --keep --recursive --rsyncable $@ - > $targetPath
+	tar hcf - "$dir" | /home/schumi/bin/compress/pigz -9 --quiet --keep --recursive --rsyncable $@ - > $targetPath
 else
-	tar hcf - "$dir" --exclude-from <(find -L $dir -size $excludeSize) | ~/bin/compress/pigz -9 --quiet --keep --recursive --rsyncable - > $targetPath
+	tar hcf - "$dir" --exclude-from <(find -L $dir -size $excludeSize) | /home/schumi/bin/compress/pigz -9 --quiet --keep --recursive --rsyncable - > $targetPath
 fi
