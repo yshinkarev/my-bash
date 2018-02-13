@@ -67,7 +67,7 @@ fi
 
 for dir in $(find $DIRECTORY -type d -iname .git); do
 	target="${dir%.git}"
-	echo "Pulling $target" | tee --append $LOG_FILE
+	echo "***** Pulling $target *****" | tee --append $LOG_FILE
 	cd $target
 	git pull --rebase 2>&1 | tee --append $LOG_FILE
 done
