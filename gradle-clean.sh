@@ -35,10 +35,10 @@ for arg in "$@"; do
 if [ -z "$DIRECTORY" ]; then
 	gradleClean
 else
-	for dir in $(find $DIRECTORY -type d -iname .git); do
-		target="${dir%.git}"
+	for dir in $(find $DIRECTORY -type d -iname gradle); do
+		target="$(dirname "$dir")"
 		echo "***** Clean $target *****"
 		cd $target
 		gradleClean
-	done
+	done || exit 1
 fi
