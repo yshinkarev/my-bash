@@ -14,4 +14,4 @@ if [ -n "$DIRECTORY" ]; then
 	cd $DIRECTORY
 fi
 
-du -a -h --max-depth=1 | sort -hr
+du -a -h --max-depth=1 2> >(grep -v 'cannot access') | sort -hr
