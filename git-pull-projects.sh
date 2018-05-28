@@ -8,7 +8,7 @@ fi
 
 # if run by sudo, then change own of file to default user.
 if [[ $EUID -eq 0 ]]; then
-	USER_TO=$(who am i | awk '{print $1}')
+	USER_TO=$(whoami | awk '{print $1}')
 	GROUP_TO=$(groups $USER_TO | awk '{print $3}')
 	chown $USER_TO:$GROUP_TO $LOG_FILE
 fi
