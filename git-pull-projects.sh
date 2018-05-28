@@ -65,9 +65,10 @@ if [ -n "$SSH_KEY_FILE" ]; then
 	ssh-add $SSH_KEY_FILE
 fi
 
-for dir in $(find $DIRECTORY -type d -iname .git); do
-	target="${dir%.git}"
-	echo "***** Pulling $target *****" | tee --append $LOG_FILE
-	cd $target
+for DIR in $(find $DIRECTORY -type d -iname .git); do
+	TARGET="${DIR%.git}"
+	echo "***** Pulling $TARGET *****" | tee --append $LOG_FILE	
+	cd $TARGET
 	git pull --rebase 2>&1 | tee --append $LOG_FILE
+	cd - > /dev/null
 done
