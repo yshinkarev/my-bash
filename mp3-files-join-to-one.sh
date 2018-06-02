@@ -43,5 +43,5 @@ if [[ ! -s "$TMP_LIST_FILE" ]]; then
 	exit 1
 fi
 
-ffmpeg -f concat -safe 0 -i $TMP_LIST_FILE -c copy $DEST $@
+ffmpeg -hide_banner -f concat -safe 0 -i $TMP_LIST_FILE -c copy $DEST $@
 exit $?
