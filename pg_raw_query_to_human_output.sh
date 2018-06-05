@@ -1,5 +1,4 @@
 #!/bin/bash
-# https://dev.mysql.com/doc/refman/5.7/en/resetting-permissions.html
 
 read -p "Enter table name: " TABLE_NAME
 # John,Smith,....
