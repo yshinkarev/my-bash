@@ -21,10 +21,11 @@ grep -v '^#' $DIR_LIST_FILE | while read -r PTH ; do
 		if [ -n "$ARGUMENTS" ]; then
 			ARGUMENTS="-v $ARGUMENTS"
 		fi
-		psql -f $FILE_FULL_PATH $ARGUMENTS
-		exit 0
+		psql -f $FILE_FULL_PATH $ARGUMENTS		
+		exit 2
 	fi
 done
 
+[[ $? == 2 ]] && exit 0
 >&2 echo "Sql file not found"
 exit 1
