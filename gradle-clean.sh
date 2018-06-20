@@ -13,6 +13,7 @@ trap cleanup EXIT
 
 gradleClean() {
 	gradle clean
+	rm -rf .gradle
 }
 
 ########################################
