@@ -5,4 +5,4 @@ if [ ! -d ".git" ]; then
 	exit 1
 fi
 
-git for-each-ref --sort=committerdate --format='%(authorname)|%(refname:short)|%(committerdate:iso)' | column -s\| -t
+git branch -r --format='%(authorname)|%(refname:short)|%(committerdate:iso)' | column -s\| -t
