@@ -6,7 +6,7 @@ START=$(date +%s)
 logStage() {
 	END=$(date +%s)
 	DIFF=$(( $END - $START ))
-	printf "[%05ds] " $DIFF
+	printf "[%06s] " $(($DIFF / 60))m$(($DIFF % 60))s
 	echo $@
 }
 
@@ -117,3 +117,8 @@ END=$(date +%s)
 DIFF=$(( $END - $START ))
 logStage "Finished"
 cd $INIT_DIR > /dev/null
+
+SCRIPT_NAME=$(basename "$0")
+TIME=$(logStage)
+notify-send "$SCRIPT_NAME finished in $TIME"
+beep.sh
