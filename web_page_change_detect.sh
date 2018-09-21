@@ -1,6 +1,23 @@
 #!/bin/bash
 
-URL=$1
+HASH_ONLY=0
+URL=
+
+#####################################################
+for arg in "$@"; do
+	case $arg in
+	    --hash-only)
+	  	HASH_ONLY=1	  	
+	  	shift
+	  	;;
+	    --url=*)
+	  	URL=${arg#*=}
+	  	shift
+	  	;;
+	  esac
+done
+#####################################################
+
 if [ -z "$URL" ]; then
 	URL_FILE=${0%.*}.url	
 	if [ -f $URL_FILE ]; then
@@ -21,6 +38,13 @@ echo -n "$OUTPUT" | sha512sum | awk '{ print $1 }'
 #####################################################
 
 PREV=$(getPageSha)
+if [ $HASH_ONLY = 1 ]; then
+	echo "$PREV"
+	exit 0
+fi
+
+exit 0
+
 REQUESTS=1
 START=$(date +%s)
 for (( ; ; )); do
