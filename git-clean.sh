@@ -2,6 +2,7 @@
 
 INIT_DIR=$(pwd)
 DIRECTORY=
+FILENAME=$(basename "$0"); ONLYNAME=${FILENAME%.*}; LOG_FILE=/tmp/$ONLYNAME.log
 
 set -e
 function cleanup {
@@ -32,6 +33,10 @@ for arg in "$@"; do
 	done
 
 ########################################
+
+rm -f $LOG_FILE
+exec > >(tee -ia $LOG_FILE)
+exec 2>&1
 
 if [ -z "$DIRECTORY" ]; then
 	gitClean

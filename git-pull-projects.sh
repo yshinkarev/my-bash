@@ -16,9 +16,7 @@ fi
 }
 trap cleanup EXIT
 
-FILENAME=$(basename "$0")
-ONLYNAME="${FILENAME%.*}"
-LOG_FILE=/tmp/$ONLYNAME.log
+FILENAME=$(basename "$0"); ONLYNAME=${FILENAME%.*}; LOG_FILE=/tmp/$ONLYNAME.log
 SSH_KEY_FILE=
 NO_SSH_KEY=0
 DIRECTORY=./
@@ -60,6 +58,8 @@ if [ -n "$SSH_KEY_FILE" ]; then
 fi
 
 rm -f $LOG_FILE
+exec > >(tee -ia $LOG_FILE)
+exec 2>&1
 
 if [ -n "$SSH_KEY_FILE" ]; then
 	ssh-add $SSH_KEY_FILE
@@ -67,8 +67,8 @@ fi
 
 for DIR in $(find $DIRECTORY -type d -iname .git); do
 	TARGET="${DIR%.git}"
-	echo "***** Pulling $TARGET *****" | tee --append $LOG_FILE	
-	cd $TARGET	
-	git pull --rebase 2>&1 | tee --append $LOG_FILE
+	echo "*************** Pulling $TARGET ***************"
+	cd $TARGET
+	git pull --rebase
 	cd - > /dev/null
 done
