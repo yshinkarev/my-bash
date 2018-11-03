@@ -16,13 +16,36 @@ convert() {
 
 ########################################
 
-SRC_FILE=$1
+SRC_FILE=
+FORMAT=$mp4
+DIR=.
+
+for arg in "$@"; do
+	case $arg in
+	    --dir=*)
+	  	DIR=${arg#*=}
+	  	shift
+	  	;;
+	    --format=*)
+	  	FORMAT=${arg#*=}
+	  	shift
+	  	;;
+	    --src=*)
+	  	SRC_FILE=${arg#*=}
+	  	shift
+	  	;;	    
+	  esac
+	done
+
+########################################
 
 if [ -z "$SRC_FILE" ]; then
-	for FILE in *.mp4; do
+	for FILE in $DIR/*.$FORMAT; do
 		echo
 		convert $FILE
-	done
+	done	
 else	
 	convert $SRC_FILE	
 fi
+
+beep.sh
