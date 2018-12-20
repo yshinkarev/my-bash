@@ -12,6 +12,7 @@ FILE_NAME=$(basename "$PNG_FILE"); EXT="${PNG_FILE##*.}"; FILE_NAME="${FILE_NAME
 
 declare -a names=("hdpi" "mdpi" "xhdpi" "xxhdpi" "xxxhdpi")
 declare -a sizes=(36 24 48 72 96)
+# declare -a sizes=(18 12 24 36 48)
 
 for ((i = 0; i < ${#names[@]}; ++i)); do
 	NAME=${names[$i]}
