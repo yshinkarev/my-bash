@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set -e
 function cleanup {
 if [ -n "$SSH_KEY_FILE" ]; then
 	ssh-add -D
