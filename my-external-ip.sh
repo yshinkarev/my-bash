@@ -1,4 +1,1 @@
-#!/bin/bash
-
-IP4=$(curl -s checkip.dyndns.org | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
-echo $IP4
+/home/schumi/bin/web/my-external-ip.sh
