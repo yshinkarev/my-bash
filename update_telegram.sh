@@ -14,6 +14,6 @@ if [[ $RC != 0 ]]; then
 fi
 
 sudo pkill -f Telegram
-pv $TEMP_FILE | sudo tar Jkxf - -C $TARGET_DIR --overwrite
+pv $TEMP_FILE | sudo tar Jxf - -C $TARGET_DIR
 rm $TEMP_FILE
 sudo reset-perms-to-root.sh $TARGET_DIR

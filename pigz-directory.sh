@@ -47,7 +47,7 @@ if [ -z "$PREFIX" ]; then
 fi
 
 targetPath=$TARGETDIR/$PREFIX$(date +"%Y.%m.%d_%H-%M-%S").tar.gz
-echo "$DIR -> $targetPath"
+echo "$targetPath"
 
 if [ -z "$EXCLUDESIZE" ]; then
 	tar hcf - "$DIR" | pigz -9 --quiet --keep --recursive --rsyncable $@ - > $targetPath

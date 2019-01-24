@@ -47,7 +47,7 @@ for arg in "$@"; do
 ########################################
 
 if [ $NO_SSH_KEY == 0 ]; then
-	SSH_KEY_FILE=	
+	SSH_KEY_FILE=
 fi
 
 echo "   Log file: [$LOG_FILE]"

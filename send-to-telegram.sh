@@ -46,6 +46,17 @@ waitConnectionIfNeeded() {
 	done
 }
 
+urlencode() {
+  local length="${#1}"
+  for (( i = 0; i < length; i++ )); do
+    local c="${1:i:1}"
+    case $c in
+      [a-zA-Z0-9.~_-]) printf "$c" ;;
+    *) printf "$c" | xxd -p -c1 | while read x;do printf "%%%s" "$x";done
+  esac
+done
+}
+
 ########################################
 LOG_FILE=
 SEND_FILE=
@@ -109,8 +120,8 @@ if [ -z "$SEND_FILE" ]; then
 		set -- "${@:1:$(($#-1))}"
 	fi
 	
-	waitConnectionIfNeeded
-	wget --post-data "text=$FROM $TEXT" --output-document=/dev/null "https://api.telegram.org/$BOT_TOKEN/sendmessage?chat_id=$CHAT_ID" $@
+	waitConnectionIfNeeded	
+	wget --post-data "text=$FROM $TEXT" --output-document=/dev/null "https://api.telegram.org/$BOT_TOKEN/sendmessage?chat_id=$CHAT_ID" $@	
 	exit 0
 fi
 
