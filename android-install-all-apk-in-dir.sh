@@ -1,1 +1,5 @@
-/home/schumi/bin/android/android-install-all-apk-in-dir.sh
+#!/bin/bash
+
+for i in *.apk; do
+	adb install -r $i
+done
