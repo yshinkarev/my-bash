@@ -103,8 +103,8 @@ fi
 FORCED_MESSAGE=1; [ -z "$TEXT" ] && FORCED_MESSAGE=0
 
 if [ -z "$TEXT" ]; then
-	# TEXT="${@: -1}"	
-	for TEXT; do true; done	
+	# TEXT="${@: -1}"
+	for TEXT; do true; done
 fi
 
 if [ -z "$FROM" ]; then
@@ -119,9 +119,9 @@ if [ -z "$SEND_FILE" ]; then
 	if [ $FORCED_MESSAGE == 0 ]; then
 		set -- "${@:1:$(($#-1))}"
 	fi
-	
-	waitConnectionIfNeeded	
-	wget --post-data "text=$FROM $TEXT" --output-document=/dev/null "https://api.telegram.org/$BOT_TOKEN/sendmessage?chat_id=$CHAT_ID" $@	
+
+	waitConnectionIfNeeded
+	wget --post-data "text=$FROM $TEXT" --output-document=/dev/null "https://api.telegram.org/$BOT_TOKEN/sendmessage?chat_id=$CHAT_ID" $@
 	exit 0
 fi
 

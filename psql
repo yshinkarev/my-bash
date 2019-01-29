@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [[ "$@" = *"--query-only"* ]]; then
+	echo "psql: {$@}"
+	exit
+fi
+
+if [ -z "$PSQL" ]; then
+    PSQL=/usr/bin/psql
+fi
+
+$PSQL "$@"

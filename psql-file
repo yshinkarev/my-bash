@@ -16,12 +16,12 @@ shift 1
 ARGUMENTS="$@"
 
 grep -v '^#' $DIR_LIST_FILE | while read -r PTH ; do
-	FILE_FULL_PATH=$(find $PTH -name $SQL_FILE_NAME)    
+	FILE_FULL_PATH=$(find $PTH -name $SQL_FILE_NAME)
 	if [ -n "$FILE_FULL_PATH" ]; then
 		if [ -n "$ARGUMENTS" ]; then
 			ARGUMENTS="-v $ARGUMENTS"
 		fi
-		psql --pset="footer=off" --pset="border=2" --pset="format=wrapped" -f $FILE_FULL_PATH $ARGUMENTS		
+		psql --pset="footer=off" --pset="border=2" --pset="format=wrapped" -f $FILE_FULL_PATH $ARGUMENTS
 		exit 2
 	fi
 done
