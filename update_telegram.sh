@@ -16,4 +16,4 @@ fi
 sudo pkill -f Telegram
 pv $TEMP_FILE | sudo tar Jxf - -C $TARGET_DIR
 rm $TEMP_FILE
-sudo reset-perms-to-root.sh $TARGET_DIR
+sudo reset_perms_to_root.sh $TARGET_DIR

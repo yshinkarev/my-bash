@@ -8,7 +8,7 @@ fi
 
 ########################################
 
-convert() {	
+convert() {
 	DEST_FILE="${1%.*}"; DEST_FILE=$DEST_FILE.mkv
 	echo "$1 -> $DEST_FILE"
 	ffmpeg -hide_banner -i $1 $DEST_FILE
@@ -33,7 +33,7 @@ for arg in "$@"; do
 	    --src=*)
 	  	SRC_FILE=${arg#*=}
 	  	shift
-	  	;;	    
+	  	;;
 	  esac
 	done
 
@@ -43,9 +43,9 @@ if [ -z "$SRC_FILE" ]; then
 	for FILE in $DIR/*.$FORMAT; do
 		echo
 		convert $FILE
-	done	
-else	
-	convert $SRC_FILE	
+	done
+else
+	convert $SRC_FILE
 fi
 
 beep.sh

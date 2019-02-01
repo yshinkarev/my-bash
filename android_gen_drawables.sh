@@ -16,10 +16,10 @@ declare -a sizes=(36 24 48 72 96)
 
 for ((i = 0; i < ${#names[@]}; ++i)); do
 	NAME=${names[$i]}
-	SIZE=${sizes[$i]};	
+	SIZE=${sizes[$i]};
 	DIR=drawable-$NAME
 	mkdir -p $DIR
 	convert $PNG_FILE -resize $SIZE'x'$SIZE $DIR/$FILE_NAME.$EXT
 done
 
-# find ./ -iname "*.png" -exec android-gen-drawables.sh {} \;
+# find ./ -iname "*.png" -exec android_gen_drawables.sh {} \;

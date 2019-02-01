@@ -112,4 +112,4 @@ for arg in "$@"; do
 	done
 ########################################
 
-send-to-telegram.sh --wait-connect=15 --message="System power on" -q
+send_to_telegram.sh --wait-connect=15 --message="System power on" -q
