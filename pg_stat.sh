@@ -4,7 +4,7 @@
 
 FILENAME=$(basename "$0"); ONLYNAME=${FILENAME%.*}; LOG_FILE=/tmp/$ONLYNAME.log
 
-if [ -z "$PSQL"]; then
+if [ -z "$PSQL" ]; then
     PSQL=/usr/bin/psql
 fi
 

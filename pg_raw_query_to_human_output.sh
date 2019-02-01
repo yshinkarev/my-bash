@@ -15,6 +15,6 @@ if [ ${#COLUMNS_ARRAY[@]} != ${#ARGUMENTS_ARRAY[@]} ]; then
 	exit 1;
 fi
 
-for i in "${!COLUMNS_ARRAY[@]}"; do 	
+for i in "${!COLUMNS_ARRAY[@]}"; do
 	printf "%-20s = %s\n" ${COLUMNS_ARRAY[$i]} ${ARGUMENTS_ARRAY[$i]}
 done

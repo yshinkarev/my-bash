@@ -64,7 +64,7 @@ if [ -n "$SSH_KEY_FILE" ]; then
 	ssh-add $SSH_KEY_FILE
 fi
 
-for DIR in $(find $DIRECTORY -type d -iname .git); do
+for DIR in $(find $DIRECTORY -type d -iname .git 2>/dev/null); do
 	TARGET="${DIR%.git}"
 	echo "*************** Pulling $TARGET ***************"
 	cd $TARGET
