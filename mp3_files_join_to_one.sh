@@ -24,7 +24,7 @@ for arg in "$@"; do
 	    *)
 	      >&2 echo "Unknown argument: $arg"
 	      exit 1
-	      ;;	    	
+	      ;;
 	  esac
 	done
 
@@ -39,7 +39,7 @@ find $SRC -type f -print0 | while IFS= read -r -d $'\0' FILE; do
 	echo "file '$(readlink -e $FILE)'" >> $TMP_LIST_FILE;
 done
 
-if [[ ! -s "$TMP_LIST_FILE" ]]; then 	
+if [[ ! -s "$TMP_LIST_FILE" ]]; then
 	exit 1
 fi
 
