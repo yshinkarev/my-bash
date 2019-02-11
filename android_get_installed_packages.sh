@@ -63,6 +63,6 @@ for P in "${PACKAGES[@]}"; do
 	if [ $COLOR == 1 ]; then
 		echo -e "$NAME ${BL}$VERSIONS${NC}"
 	else
-		echo "$NAME $VERSIONS$"
+		echo "$NAME $VERSIONS"
 	fi
 done
