@@ -1,7 +1,7 @@
 #!/bin/bash
 
 INIT_DIR=$(pwd)
-DIRECTORY=
+DIRECTORY=.
 CMD=
 FILENAME=$(basename "$0"); ONLYNAME=${FILENAME%.*}; LOG_FILE=/tmp/$ONLYNAME.log
 
@@ -10,6 +10,19 @@ function cleanup {
 	cd $INIT_DIR > /dev/null
 }
 trap cleanup EXIT
+
+########################################
+
+showHelp() {
+cat << EOF
+Usage: $(basename $0) [--directory=DIR] [--cmd=COMMAND][--help]
+Run gradle recursively for all projects in directory DIR and all subdirectories.
+
+  --directory   Start directory to search (default: current directory)
+  --cmd         Command. Available: build, clean
+  --help        Show this help and exit
+EOF
+}
 
 ########################################
 
@@ -29,7 +42,7 @@ gradleBuild() {
 execCommand() {
 case "$CMD" in
 	clean)
-		gradleClean	
+		gradleClean
 	    	;;
 	build)
 		gradleBuild
@@ -38,6 +51,11 @@ esac
 }
 
 ########################################
+
+if [[ "$@" == *"--help"* ]]; then
+	showHelp
+	exit 0
+fi
 
 for arg in "$@"; do
 	  case $arg in
@@ -60,8 +78,9 @@ for arg in "$@"; do
 ########################################
 
 if [ "$CMD" != "clean" ] && [ "$CMD" != "build" ] ; then
-	>&2 echo "Unknown argument cmd. Available values: clean, build"
-	exit 1	
+	>&2 echo "Unexpected argument cmd"
+	showHelp
+	exit 1
 fi
 
 rm -f $LOG_FILE
@@ -73,9 +92,9 @@ if [ -z "$DIRECTORY" ]; then
 else
 	for dir in $(find $DIRECTORY -type d -iname gradle); do
 		TARGET="$(dirname "$dir")"
-		echo "*************** $TARGET ***************"		
+		echo "*************** $TARGET ***************"
 		cd $TARGET
-		execCommand	
+		execCommand
 		cd - > /dev/null
-	done || exit 1	
+	done || exit 1
 fi
