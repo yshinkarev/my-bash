@@ -1,22 +1,21 @@
 #!/bin/bash
 
 ########################################
-
 showHelp() {
 cat << EOF
-Usage: $(basename $0) [--mask=FILES_MASK] [--color] [--help]
+Usage: $(basename $0) [--mask=FILES_MASK] [--color] [--recursive] [--help]
 Show information about apk files filtered by name
 
   --mask   	Filter filename mask
   --color	Colored output
+  --recursive   Search recursively in subdirectories
   --help        Show this help and exit
 EOF
 }
-
 ########################################
-
 FILES_MASK=*.apk
 COLOR=0
+RECURSIVE=0
 
 if [[ "$@" == *"--help"* ]]; then
 	showHelp
@@ -33,31 +32,52 @@ for arg in "$@"; do
 	    	COLOR=1
 	    	shift 1
 	    	;;
+	    --recursive)
+	        RECURSIVE=1
+	        shift 1
+	        ;;
 	    *)
 	      >&2 echo "Unknown argument: $arg"
 	      exit 1
 	      ;;
 	  esac
 	done
-
 ########################################
+processFile() {
+	PACKAGE_INFO=`aapt dump badging $1 | grep -E "package|launchable-activity|versionCode"`
+	PACKAGE=`echo ${PACKAGE_INFO} | sed "s/.*package: name='\([^']*\)'.*/\1/"`
+	VERSION=`echo ${PACKAGE_INFO} | sed "s/.* versionCode='\([^']*\)'.*/\1/"`
+	VERSION_NAME=`echo ${PACKAGE_INFO} | sed "s/.* versionName='\([^']*\)'.*/\1/"`
 
+	ACTIVITY=`echo ${PACKAGE_INFO} | sed -e "s/.*launchable-activity: name='\([^']*\)'.*/\1/g"`
+	if [[ $ACTIVITY == *"package: name"* ]]; then
+		ACTIVITY=
+	fi
+	if [ ${COLOR} == 0 ]; then
+		BL=
+		GR=
+		NC=
+	fi
+	SIZE=$(humanFormat $(stat -c%s "$1"))
+	echo -e "$1 ${BL}${PACKAGE}${NC} ${VERSION} ${VERSION_NAME} ${GR}${ACTIVITY}${NC} ${SIZE}"
+}
+########################################
+humanFormat() {
+	echo $(numfmt --to=iec-i --suffix=B --format="%.1f" $1)
+}
+########################################
 BL='\033[1;34m'
 GR='\033[0;32m'
 NC='\033[0m'
 
-for APK in $FILES_MASK; do
-	PACKAGE_INFO=`aapt dump badging $APK | grep -E "package|launchable-activity|versionCode"`
-	PACKAGE=`echo $PACKAGE_INFO | sed "s/.*package: name='\([^']*\)'.*/\1/"`
-	VERSION=`echo $PACKAGE_INFO | sed "s/.* versionCode='\([^']*\)'.*/\1/"`
+if [ ${RECURSIVE} == 1 ]; then
+	for APK in $(find . -type f -name "${FILES_MASK}"); do
+		processFile $APK
+	done
+	exit 0
+fi
 
-	ACTIVITY=`echo $PACKAGE_INFO | sed -e "s/.*launchable-activity: name='\([^']*\)'.*/\1/g"`
-	if [[ $ACTIVITY == *"package: name"* ]]; then
-		ACTIVITY=
-	fi
-	if [ $COLOR == 1 ]; then
-		echo -e "$APK ${BL}$PACKAGE${NC} $VERSION ${GR}$ACTIVITY${NC}"
-	else
-		echo "$APK $PACKAGE $VERSION $ACTIVITY"
-	fi
+echo "${FILES_MASK}"
+for APK in ${FILES_MASK}; do
+	processFile ${APK}
 done
