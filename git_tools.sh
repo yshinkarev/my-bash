@@ -165,8 +165,8 @@ for arg in "$@"; do
 	    	exit 0
 	    	;;
 	    *)
-	      echo "Unknown argument: $arg"
-	      exit 1
-	      ;;
+	        >&2 echo "Unknown argument: $arg"
+	        exit 1
+	        ;;
 	  esac
 	done
