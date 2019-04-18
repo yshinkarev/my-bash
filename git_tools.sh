@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 INIT_DIR=$(pwd)
-DIRECTORY=.
-CMD=
 FILE_NAME=$(basename "$0"); ONLY_NAME=${FILE_NAME%.*}; LOG_FILE=/tmp/${ONLY_NAME}.log
+CLONE_TO_DIR=
+URL=
 
 set -e
 function cleanup {
@@ -21,9 +21,11 @@ K_IGN_TOGZ="--ignored--to-gz"
 K_MY_CMTS="--my-commits"
 K_HLP="--help"
 K_KWORDS="--keywords"
+K_CLONE_TO="--clone-to"
 K_CMPL_INS="--complete-install"
 K_CMPL_UNINS="--complete-uninstall"
-ALL_KEYWORDS=("${K_BR_GET}" "${K_TAGS_ALL}" "${K_PUSH_TO_REP}=" "${K_BR_ALL}" "${K_BR_PULL_ALL}" "${K_IGN_TOGZ}" "${K_MY_CMTS}" "${K_KWORDS}" "${K_HLP}" "${K_CMPL_INS}" "${K_CMPL_UNINS}")
+K_URL="--url"
+ALL_KEYWORDS=("${K_BR_GET}" "${K_TAGS_ALL}" "${K_PUSH_TO_REP}=" "${K_BR_ALL}" "${K_BR_PULL_ALL}" "${K_IGN_TOGZ}" "${K_MY_CMTS}" "${K_KWORDS}" "${K_HLP}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_CLONE_TO}=" "${K_URL}=")
 ########################################
 showHelp() {
 	cat << EOF
@@ -37,6 +39,8 @@ Simple wrapper for git.
   ${K_BR_PULL_ALL}    Pull all remote branches
   ${K_IGN_TOGZ}       Pack ignored files to archive
   ${K_MY_CMTS}           Show user's commits ($(git config user.name))
+  ${K_CLONE_TO}=PATH        Clone git repository with root directory PATH.
+                         Expected argument ${K_URL}=URL with url to remote repository
   ${K_KWORDS}             Show available arguments
   ${K_CMPL_INS}     Configure auto completion for script
   ${K_CMPL_UNINS}   Remove auto completion for scrip
@@ -106,14 +110,29 @@ complete_install() {
   return 0
 }
 complete -o nospace -F _script '${FILE_NAME}'' > ${TMP_FILE}
-	sudo mv $TMP_FILE ${FILE}
+	sudo mv ${TMP_FILE} ${FILE}
 	sudo chown root:root ${FILE}
 	sudo chmod 644 ${FILE}
 }
 ########################################
 complete_uninstall() {
 	FILE=$(get_complete_file)
-	sudo rm $FILE
+	sudo rm ${FILE}
+}
+clone_to() {
+    DIR=$1
+    URL=$2
+    if [[ -z "${URL}" ]]; then
+        2> echo "Missing argument --url=URL"
+        exit 1
+    fi
+    if [[ ! -d "${DIR}" ]]; then
+        2> echo "Directory ${CLONE_TO_DIR} doesn't exists."
+        exit 1
+	fi
+	REP_DIR=$(basename "${URL}"); REP_DIR=${REP_DIR%.*};
+	cd ${DIR}
+	git clone ${URL} ${REP_DIR}
 }
 ######################################## MAIN ########################################
 if [[ "$@" == *"${K_HLP}"* ]]; then
@@ -164,9 +183,20 @@ for arg in "$@"; do
 	    	complete_uninstall
 	    	exit 0
 	    	;;
+	    ${K_CLONE_TO}=*)
+	        CLONE_TO_DIR=${arg#*=}
+	    	;;
+	    ${K_URL}=*)
+	        URL=${arg#*=}
+	        ;;
 	    *)
 	        >&2 echo "Unknown argument: $arg"
 	        exit 1
 	        ;;
 	  esac
 	done
+
+if [[ -n "${CLONE_TO_DIR}" ]]; then
+    clone_to ${CLONE_TO_DIR} ${URL}
+    exit 0
+fi
