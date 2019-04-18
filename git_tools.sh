@@ -100,7 +100,7 @@ get_complete_file() {
 complete_install() {
 	FILE=$(get_complete_file)
 	TMP_FILE=$(mktemp /tmp/${ONLY_NAME}.XXXXXX)
-	echo '_script()
+	echo '_git_tools()
 {
   opts=$('$(realpath $0)' --keywords)
   local cur prev
@@ -109,7 +109,7 @@ complete_install() {
   COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
   return 0
 }
-complete -o nospace -F _script '${FILE_NAME}'' > ${TMP_FILE}
+complete -o nospace -F _git_tools '${FILE_NAME}'' > ${TMP_FILE}
 	sudo mv ${TMP_FILE} ${FILE}
 	sudo chown root:root ${FILE}
 	sudo chmod 644 ${FILE}
