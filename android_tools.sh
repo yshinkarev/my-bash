@@ -21,25 +21,27 @@ K_GET_DB="--get-db"
 K_GET_FILE="--get-file"
 K_UNINSTALL="--uninstall"
 K_SEND_ACTION="--send-action"; ACTION_BOOT="boot"; ACTION_BOOT_V="ACTION_BOOT_COMPLETED"
+K_FOCUSED_WND="--focused-wnd"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_HLP}")
 ########################################
 showHelp() {
 	cat << EOF
 Usage: $(basename $0) <command>
 Simple wrapper for android.
 
-  ${K_GET_OS_VER}      Show android OS versions of connected devices
-  ${K_DEVICES}              Show connected devices
+  ${K_GET_OS_VER}      Print android OS versions of connected devices
+  ${K_DEVICES}              Print connected devices
   ${K_GET_DB}=FILE          Download sqlite3 database with name FILE from internal storage (uses stetho, dumpsys)
   ${K_GET_FILE}=FILE        Download file from internal storage (uses stetho, dumpsys)
   ${K_UNINSTALL}=TARGET     Uninstall application by TARGET, where TARGET is package name or local apk-file
   ${K_SEND_ACTION}=ACTION   Send broadcast action ACTION (standart or own).
                          Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
-  ${K_KWORDS}             Show available arguments
+  ${K_FOCUSED_WND}          Print focused window
+  ${K_KWORDS}             Print available arguments
   ${K_CMPL_INS}     Configure auto completion for script
   ${K_CMPL_UNINS}   Remove auto completion for script
-  ${K_HLP}                 Show this help and exit
+  ${K_HLP}                 Print this help and exit
 EOF
 }
 ########################################
@@ -167,6 +169,10 @@ send_action() {
     adb shell am broadcast -a ${VALUE}
 }
 ########################################
+print_focused_wnd() {
+    adb shell dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp'
+}
+########################################
 show_keywords() {
 	KEYWORDS=$(printf " %s" "${ALL_KEYWORDS[@]}")
 	echo "${KEYWORDS:1}"
@@ -230,6 +236,10 @@ for arg in "$@"; do
 	  	    send_action ${arg#*=}
 	  	    exit 0
 	  	    ;;
+        ${K_FOCUSED_WND})
+            print_focused_wnd
+            exit 0
+            ;;
 	    ${K_KWORDS})
 	    	show_keywords
 	    	exit 0
