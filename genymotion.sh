@@ -7,11 +7,13 @@ K_LIST="--list"
 K_FIND="--find"
 K_START="--start"
 K_STOP="--stop"
+K_STOP_ALL="--stop-all"
+K_START_ALL="--start-all"
 K_KWORDS="--keywords"
 K_CMPL_INS="--complete-install"
 K_CMPL_UNINS="--complete-uninstall"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_LIST}" "${K_FIND}=" "${K_START}"= "${K_STOP}"= "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_HLP}")
+ALL_KEYWORDS=("${K_LIST}" "${K_FIND}=" "${K_START}"= "${K_STOP}"= "${K_STOP_ALL}" "${K_START_ALL}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_HLP}")
 ########################################
 showHelp() {
 	cat << EOF
@@ -22,6 +24,8 @@ Simple wrapper for genymotion.
   ${K_FIND}=NAME            Find virtual device by pattern NAME
   ${K_START}=NAME           Start virtual device by pattern name NAME
   ${K_STOP}=NAME            Stop virtual device by pattern name NAME
+  ${K_STOP_ALL}             Stop all running virtual devices
+  ${K_START_ALL}            Start all available virtual devices
   ${K_KWORDS}             Print available arguments
   ${K_CMPL_INS}     Configure auto completion for script
   ${K_CMPL_UNINS}   Remove auto completion for script
@@ -30,36 +34,68 @@ EOF
 }
 ########################################
 devices_list() {
-	genyshell -c "devices list" 2>&1 | sed -n -e '/ Id /,$p'
+    genyshell -c "devices list" 2>&1 | sed -n -e '/ Id /,$p'
 }
 ########################################
 find_vm() {
     NAME=$1
-    FATAL_ON_ERROR=$2
     if [[ -z ${NAME} ]]; then
         >&2 echo "Missing argument: pattern name"
+        exit 1
     fi
-    VM=$(devices_list | grep -i ${NAME})
-    if [[ -n ${VM} ]]; then
-        VM_NAME=$(echo ${VM} | sed 's/.*| //')
-    fi
-    if [[ ${FATAL_ON_ERROR} -eq 1 ]] && [[ -z ${VM_NAME} ]] ; then
+    FATAL_ON_ERROR=$2
+    local -n _VM_NAMES=$3
+    mapfile -t _VM_NAMES < <( genyshell -c "devices list" 2>&1 | sed -n -e '/ Id /,$p' | sed 's/.*| //' | grep -i "${NAME}" )
+    if [[ ${FATAL_ON_ERROR} -eq 1 ]] && [[ -z ${_VM_NAMES} ]] ; then
         >&2 echo "Virtual device with pattern name '$NAME' not found"
         exit 1
     fi
-    echo ${VM_NAME}
+}
+########################################
+start_vm_by_names() {
+    _VM_NAMES=("$@")
+    for VM_NAME in "${_VM_NAMES[@]}"; do
+        echo "Start \"${VM_NAME}\""
+  		nohup player --vm-name "${VM_NAME}" </dev/null >/dev/null 2>&1 &
+	done
 }
 ########################################
 start_vm() {
-    VM_NAME=$(find_vm $1 1)
-    echo "Start ${VM_NAME}"
-	nohup player --vm-name "${VM_NAME}" </dev/null >/dev/null 2>&1 &
+    local VM_NAMES=()
+    find_vm $1 1 VM_NAMES
+    start_vm_by_names "${VM_NAMES[@]}"
+}
+########################################
+stop_vm_by_names() {
+    _VM_NAMES=("$@")
+    for VM_NAME in "${_VM_NAMES[@]}"; do
+        echo "Stop \"${_VM_NAMES}\""
+        player -n "${VM_NAME}" -x 2> /dev/null
+	done
 }
 ########################################
 stop_vm() {
-    VM_NAME=$(find_vm $1 1)
-    echo "Stop ${VM_NAME}"
-    player -n "${VM_NAME}" -x
+    local VM_NAMES=()
+    find_vm $1 1 VM_NAMES
+    stop_vm_by_names "${VM_NAMES[@]}"
+}
+########################################
+stop_all() {
+    mapfile -t _VM_NAMES < <( genyshell -c "devices list" 2>&1 | sed -n -e '/ Id /,$p' | grep -i " on " | sed 's/.*| //' )
+    if [[ ${#_VM_NAMES[@]} -eq 0 ]]; then
+	    echo "No started virtual devices"
+	else
+	    stop_vm_by_names "${_VM_NAMES[@]}"
+	fi
+}
+########################################
+start_all() {
+    mapfile -t _VM_NAMES < <( genyshell -c "devices list" 2>&1 | sed -n -e '/ Id /,$p' | grep -i " off " | sed 's/.*| //' )
+    if [[ ${#_VM_NAMES[@]} -eq 0 ]]; then
+	    echo "No available virtual devices"
+	else
+	    start_vm_by_names "${_VM_NAMES[@]}"
+	fi
 }
 ########################################
 show_keywords() {
@@ -99,11 +135,6 @@ if [[ "$@" == *"${K_HLP}"* ]]; then
 	exit 0
 fi
 
-# devices_list
-# run_vm
-
-# nohup genymotion > /dev/null 2>&1 &
-
 for arg in "$@"; do
 	case ${arg} in
 	    ${K_LIST})
@@ -111,7 +142,9 @@ for arg in "$@"; do
 	  	    exit 0
 	  	    ;;
 	  	${K_FIND}=*)
-	  	    find_vm ${arg#*=} 1
+	  	    VM_NAMES=()
+	  	    find_vm ${arg#*=} 1 VM_NAMES
+	  	    printf '%s\n' "${VM_NAMES[@]}"
 	  	    exit 0
 	  	    ;;
 	  	${K_START}=*)
@@ -120,6 +153,14 @@ for arg in "$@"; do
 	  	    ;;
 	  	${K_STOP}=*)
 	  	    stop_vm ${arg#*=}
+	  	    exit 0
+	  	    ;;
+	  	${K_STOP_ALL})
+	  	    stop_all
+	  	    exit 0
+	  	    ;;
+	  	${K_START_ALL})
+	  	    start_all
 	  	    exit 0
 	  	    ;;
 	    ${K_KWORDS})
