@@ -66,11 +66,11 @@ show_connected_devices() {
 }
 ########################################
 check_dumpapp_avail() {
-   which dumpapp.sh >/dev/null
+   which dumpapp >/dev/null
     if [[ $? -ne 0 ]]; then
-        >&2 echo "dumpapp.sh not found."
+        >&2 echo "dumpapp not found."
         >&2 echo "Please read https://facebook.github.io/stetho"
-        >&2 echo  "Seems https://github.com/facebook/stetho/blob/master/scripts/dumpapp that's your need, rename file to dumpapp.sh."
+        >&2 echo  "Seems https://github.com/facebook/stetho/blob/master/scripts/dumpapp that's your need, rename file to dumpapp."
         exit 1
     fi
 }
@@ -82,7 +82,7 @@ humanFormat() {
 download_file() {
     FILE=$1
     ONLY_NAME=$(basename "$FILE")
-    dumpapp.sh files download - ${FILE} | zcat > ${ONLY_NAME}
+    dumpapp files download - ${FILE} | zcat > ${ONLY_NAME}
 	SIZE=$(humanFormat $(stat -c%s "${ONLY_NAME}"))
     echo "${ONLY_NAME} ${SIZE}"
 }
