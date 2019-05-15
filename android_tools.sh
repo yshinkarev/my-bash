@@ -205,9 +205,9 @@ complete_uninstall() {
 	sudo rm ${FILE}
 }
 ######################################## MAIN ########################################
-if [[ "$@" == *"${K_HLP}"* ]]; then
-	showHelp
-	exit 0
+if [[ "$@" == *"${K_HLP}"* ]] || [[ "$#" -eq 0 ]] ; then
+    showHelp
+    exit 0
 fi
 
 for arg in "$@"; do

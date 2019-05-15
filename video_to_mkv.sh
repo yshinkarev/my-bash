@@ -17,7 +17,7 @@ convert() {
 ########################################
 
 SRC_FILE=
-FORMAT=$mp4
+FORMAT=mp4
 DIR=.
 
 for arg in "$@"; do
