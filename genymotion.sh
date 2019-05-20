@@ -7,13 +7,14 @@ K_LIST="--list"
 K_FIND="--find"
 K_START="--start"
 K_STOP="--stop"
+K_ASPECT="--aspect"
 K_STOP_ALL="--stop-all"
 K_START_ALL="--start-all"
 K_KWORDS="--keywords"
 K_CMPL_INS="--complete-install"
 K_CMPL_UNINS="--complete-uninstall"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_LIST}" "${K_FIND}=" "${K_START}"= "${K_STOP}"= "${K_STOP_ALL}" "${K_START_ALL}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_HLP}")
+ALL_KEYWORDS=("${K_LIST}" "${K_FIND}=" "${K_START}"= "${K_STOP}"= "${K_STOP_ALL}" "${K_START_ALL}" "${K_ASPECT}=" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_HLP}")
 ########################################
 showHelp() {
 	cat << EOF
@@ -26,6 +27,8 @@ Simple wrapper for genymotion.
   ${K_STOP}=NAME            Stop virtual device by pattern name NAME
   ${K_STOP_ALL}             Stop all running virtual devices
   ${K_START_ALL}            Start all available virtual devices
+  ${K_ASPECT}=VALUE         Increase window size in VALUE times for started virtual devices
+                         VALUE=0.5 - reduce window size in 2 times.
   ${K_KWORDS}             Print available arguments
   ${K_CMPL_INS}     Configure auto completion for script
   ${K_CMPL_UNINS}   Remove auto completion for script
@@ -50,6 +53,30 @@ find_vm() {
         >&2 echo "Virtual device with pattern name '$NAME' not found"
         exit 1
     fi
+}
+########################################
+change_aspect() {
+    ASPECT=$1
+    mapfile -t VMS < <( wmctrl -l | grep "Genymotion " )
+    if [[ ${#VMS[@]} -eq 0 ]]; then
+	    echo "No started virtual devices"
+	else
+	    for WM in "${VMS[@]}"; do
+            HEX_WID=$(echo "${WM}" | cut -d' ' -f 1)
+            WID=$(printf '%d\n' ${HEX_WID})
+            unset X Y WIDTH HEIGHT
+            eval $(xwininfo -id ${WID} | sed -e "s/^ \+Absolute upper-left X: \+\([0-9]\+\).*/X=\1/p" \
+           -e "s/^ \+Absolute upper-left Y: \+\([0-9]\+\).*/Y=\1/p" \
+            -n -e "s/^ \+Width: \+\([0-9]\+\).*/WIDTH=\1/p" \
+            -e "s/^ \+Height: \+\([0-9]\+\).*/HEIGHT=\1/p" )
+            NEW_WIDTH=$(bc -l <<< "scale=0; ${WIDTH}*${ASPECT}")
+            NEW_WIDTH=${NEW_WIDTH%.*}
+            NEW_HEIGHT=$(bc -l <<< "scale=0; ${HEIGHT}*${ASPECT}")
+            NEW_HEIGHT=${NEW_HEIGHT%.*}
+            echo "Window ${WID} (${X},${Y}) ${WIDTH}x${HEIGHT} => ${NEW_WIDTH}x${NEW_HEIGHT}"
+            wmctrl -i -r ${WID} -e 0,${X},${Y},${NEW_WIDTH},${NEW_HEIGHT}
+	    done
+	fi
 }
 ########################################
 start_vm_by_names() {
@@ -141,6 +168,14 @@ for arg in "$@"; do
 	  	    devices_list
 	  	    exit 0
 	  	    ;;
+	  	${K_ASPECT}=*)
+	  	    ASPECT=${arg#*=}
+	  	    if ! [[ ${ASPECT} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]] ; then
+		        >&2 echo "Expected number/float"
+		        exit 1
+	        fi
+	        change_aspect ${ASPECT}
+	  	    ;;    
 	  	${K_FIND}=*)
 	  	    VM_NAMES=()
 	  	    find_vm ${arg#*=} 1 VM_NAMES
