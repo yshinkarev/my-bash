@@ -22,8 +22,9 @@ K_GET_FILE="--get-file"
 K_UNINSTALL="--uninstall"
 K_SEND_ACTION="--send-action"; ACTION_BOOT="boot"; ACTION_BOOT_V="ACTION_BOOT_COMPLETED"
 K_FOCUSED_WND="--focused-wnd"
+K_WIFI="--wifi"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_HLP}")
 ########################################
 showHelp() {
 	cat << EOF
@@ -38,6 +39,7 @@ Simple wrapper for android.
   ${K_SEND_ACTION}=ACTION   Send broadcast action ACTION (standart or own).
                          Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
   ${K_FOCUSED_WND}          Print focused window
+  ${K_WIFI}=FLAG            Enable/disable wifi, FLAG=on|off
   ${K_KWORDS}             Print available arguments
   ${K_CMPL_INS}     Configure auto completion for script
   ${K_CMPL_UNINS}   Remove auto completion for script
@@ -173,6 +175,23 @@ print_focused_wnd() {
     adb shell dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp'
 }
 ########################################
+change_wifi_state () {
+    FLAG=$1
+    if [[ -z ${FLAG} ]]; then
+        >&2 echo "Missing argument: flag"
+        exit 1
+    fi
+    FLAG=$(echo "${FLAG,,}")
+    if [[ ${FLAG} == "on" ]]; then
+        adb shell svc wifi enable
+    elif [[ ${FLAG} == "off" ]]; then
+        adb shell svc wifi disable
+    else
+        >&2 echo "Unknown flag value. Expected on|off"
+        exit 1
+    fi
+}
+########################################
 show_keywords() {
 	KEYWORDS=$(printf " %s" "${ALL_KEYWORDS[@]}")
 	echo "${KEYWORDS:1}"
@@ -240,6 +259,10 @@ for arg in "$@"; do
             print_focused_wnd
             exit 0
             ;;
+        ${K_WIFI}=*)
+	  	    change_wifi_state ${arg#*=}
+	  	    exit 0
+	  	    ;;
 	    ${K_KWORDS})
 	    	show_keywords
 	    	exit 0
