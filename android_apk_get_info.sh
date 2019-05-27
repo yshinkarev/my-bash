@@ -63,7 +63,12 @@ processFile() {
 }
 ########################################
 humanFormat() {
-	echo $(numfmt --to=iec-i --suffix=B --format="%.1f" $1)
+    which numfmt >/dev/null
+    if [[ $? -eq 0 ]]; then
+	    echo $(numfmt --to=iec-i --suffix=B --format="%.1f" $1)
+	else
+	    echo $1
+	fi
 }
 ########################################
 BL='\033[1;34m'
