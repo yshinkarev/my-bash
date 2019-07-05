@@ -147,6 +147,9 @@ complete_install() {
   return 0
 }
 complete -o nospace -F _genymotion '${FILE_NAME}'' > ${TMP_FILE}
+  if [[ $(whoami) == "schumi" ]]; then
+	    echo "complete -o nospace -F _genymotion g" >> ${TMP_FILE}
+	fi
 	sudo mv ${TMP_FILE} ${FILE}
 	sudo chown root:root ${FILE}
 	sudo chmod 644 ${FILE}

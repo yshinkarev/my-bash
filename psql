@@ -5,8 +5,8 @@ if [[ "$@" = *"--query-only"* ]]; then
 	exit
 fi
 
-if [ -z "$PSQL" ]; then
+if [[ -z "${PSQL}" ]]; then
     PSQL=/usr/bin/psql
 fi
 
-$PSQL "$@"
+${PSQL} "$@"
