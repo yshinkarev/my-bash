@@ -148,7 +148,7 @@ complete_install() {
 }
 complete -o nospace -F _genymotion '${FILE_NAME}'' > ${TMP_FILE}
   if [[ $(whoami) == "schumi" ]]; then
-	    echo "complete -o nospace -F _genymotion g" >> ${TMP_FILE}
+	    echo "complete -o nospace -F _genymotion gm" >> ${TMP_FILE}
 	fi
 	sudo mv ${TMP_FILE} ${FILE}
 	sudo chown root:root ${FILE}
@@ -178,7 +178,7 @@ for arg in "$@"; do
 		        exit 1
 	        fi
 	        change_aspect ${ASPECT}
-	  	    ;;    
+	  	    ;;
 	  	${K_FIND}=*)
 	  	    VM_NAMES=()
 	  	    find_vm ${arg#*=} 1 VM_NAMES

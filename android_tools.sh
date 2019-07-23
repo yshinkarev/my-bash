@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 
 INIT_DIR=$(pwd)
-DIRECTORY=.
-CMD=
-FILE_NAME=$(basename "$0"); ONLY_NAME=${FILE_NAME%.*}; LOG_FILE=/tmp/${ONLY_NAME}.log
+FILE_NAME=$(basename "$0")
+ONLY_NAME=${FILE_NAME%.*} #LOG_FILE=/tmp/${ONLY_NAME}.log
 
 set -e
-function cleanup {
-	cd ${INIT_DIR} > /dev/null
+function cleanup() {
+    cd "${INIT_DIR}" >/dev/null
 }
 trap cleanup EXIT
 
@@ -20,15 +19,18 @@ K_CMPL_UNINS="--complete-uninstall"
 K_GET_DB="--get-db"
 K_GET_FILE="--get-file"
 K_UNINSTALL="--uninstall"
-K_SEND_ACTION="--send-action"; ACTION_BOOT="boot"; ACTION_BOOT_V="ACTION_BOOT_COMPLETED"
+K_SEND_ACTION="--send-action"
+ACTION_BOOT="boot"
+ACTION_BOOT_V="ACTION_BOOT_COMPLETED"
 K_FOCUSED_WND="--focused-wnd"
 K_WIFI="--wifi"
+K_DEV_PROPS="--dev-props"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_HLP}")
 ########################################
 showHelp() {
-	cat << EOF
-Usage: $(basename $0) <command>
+    cat <<EOF
+Usage: $(basename "$0") <command>
 Simple wrapper for android.
 
   ${K_GET_OS_VER}      Print android OS versions of connected devices
@@ -40,6 +42,7 @@ Simple wrapper for android.
                          Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
   ${K_FOCUSED_WND}          Print focused window
   ${K_WIFI}=FLAG            Enable/disable wifi, FLAG=on|off
+  ${K_DEV_PROPS}            Print device properties
   ${K_KWORDS}             Print available arguments
   ${K_CMPL_INS}     Configure auto completion for script
   ${K_CMPL_UNINS}   Remove auto completion for script
@@ -55,7 +58,7 @@ get_os_versions() {
     DEVICES=$(get_connected_devices)
     OUT=()
     for DEV in ${DEVICES}; do
-        VER=$(adb -s ${DEV} shell getprop ro.build.version.release)
+        VER=$(adb -s "${DEV}" shell getprop ro.build.version.release)
         echo "${DEV} ${VER}"
     done | column -t
 }
@@ -63,36 +66,36 @@ get_os_versions() {
 show_connected_devices() {
     DEVICES=$(get_connected_devices)
     for DEV in ${DEVICES}; do
-        echo ${DEV}
-	done
+        echo "${DEV}"
+    done
 }
 ########################################
 check_dumpapp_avail() {
-   which dumpapp >/dev/null
+    which dumpapp >/dev/null
     if [[ $? -ne 0 ]]; then
-        >&2 echo "dumpapp not found."
-        >&2 echo "Please read https://facebook.github.io/stetho"
-        >&2 echo  "Seems https://github.com/facebook/stetho/blob/master/scripts/dumpapp that's your need, rename file to dumpapp."
+        echo >&2 "dumpapp not found."
+        echo >&2 "Please read https://facebook.github.io/stetho"
+        echo >&2 "Seems https://github.com/facebook/stetho/blob/master/scripts/dumpapp that's your need, rename file to dumpapp."
         exit 1
     fi
 }
 ########################################
 humanFormat() {
-	echo $(numfmt --to=iec-i --suffix=B --format="%.1f" $1)
+    numfmt --to=iec-i --suffix=B --format="%.1f" "$1"
 }
 ########################################
 download_file() {
     FILE=$1
     ONLY_NAME=$(basename "$FILE")
-    dumpapp files download - ${FILE} | zcat > ${ONLY_NAME}
-	SIZE=$(humanFormat $(stat -c%s "${ONLY_NAME}"))
+    dumpapp files download - "${FILE}" | zcat >"${ONLY_NAME}"
+    SIZE=$(humanFormat $(stat -c%s "${ONLY_NAME}"))
     echo "${ONLY_NAME} ${SIZE}"
 }
 ########################################
 get_db() {
     NAME=$1
     if [[ -z ${NAME} ]]; then
-        >&2 echo "Missing argument: file name"
+        echo >&2 "Missing argument: file name"
         exit 1
     fi
     check_dumpapp_avail
@@ -101,66 +104,66 @@ get_db() {
     download_file "databases/${NAME}-wal"
     which sqlite3 >/dev/null
     if [[ $? -eq 0 ]]; then
-        sqlite3 ${NAME} VACUUM;
-        RC=$?;
-	    if [[ ${RC} != 0 ]]; then
-		    exit ${RC};
-	    fi
-	    FINAL_NAME="${NAME}.sqlite3"
-	    mv ${NAME} ${FINAL_NAME}
-	    RC=$?;
-	    if [[ ${RC} != 0 ]] || [[ ! -f ${FINAL_NAME} ]]; then
-		    exit ${RC};
-	    fi
-	    SIZE=$(humanFormat $(stat -c%s "${FINAL_NAME}"))
-	    echo "Final file: ${FINAL_NAME} ${SIZE}"
+        sqlite3 "${NAME}" VACUUM
+        RC=$?
+        if [[ ${RC} != 0 ]]; then
+            exit ${RC}
+        fi
+        FINAL_NAME="${NAME}.sqlite3"
+        mv "${NAME}" "${FINAL_NAME}"
+        RC=$?
+        if [[ ${RC} != 0 ]] || [[ ! -f ${FINAL_NAME} ]]; then
+            exit ${RC}
+        fi
+        SIZE=$(humanFormat $(stat -c%s "${FINAL_NAME}"))
+        echo "Final file: ${FINAL_NAME} ${SIZE}"
     fi
 }
 ########################################
 get_file() {
     NAME=$1
     if [[ -z ${NAME} ]]; then
-        >&2 echo "Missing argument: file name"
+        echo >&2 "Missing argument: file name"
         exit 1
     fi
     check_dumpapp_avail
-    download_file ${NAME}
+    download_file "${NAME}"
 }
 ########################################
 uninstall_package() {
     PACKAGE=$1
     echo "Uninstall package \"${PACKAGE}\""
-    adb uninstall ${PACKAGE}
+    adb uninstall "${PACKAGE}"
 }
 ########################################
 uninstall_app() {
     TARGET=$1
     if [[ -z ${TARGET} ]]; then
-        >&2 echo "Missing argument: package name or local apk-file"
+        echo >&2 "Missing argument: package name or local apk-file"
         exit 1
     fi
     APK=$(echo "${TARGET,,}")
     if [[ ${APK} == *.apk ]]; then
         if [[ ! -f ${TARGET} ]]; then
-            >&2 echo "File ${TARGET} not found"
+            echo >&2 "File ${TARGET} not found"
             exit 1
         fi
-        PACKAGE_INFO=$(aapt dump badging ${TARGET} | grep -E "package|launchable-activity")
-        PACKAGE=$(echo ${PACKAGE_INFO} | sed "s/.*package: name='\([^']*\)'.*/\1/")
+        PACKAGE_INFO=$(aapt dump badging "${TARGET}" | grep -E "package|launchable-activity")
+        PACKAGE=$(echo "${PACKAGE_INFO}" | sed "s/.*package: name='\([^']*\)'.*/\1/")
         if [[ -z ${PACKAGE} ]]; then
-            >&2 echo "Package name not found in file ${TARGET}"
+            echo >&2 "Package name not found in file ${TARGET}"
             exit 1
         fi
     else
         PACKAGE=${TARGET}
     fi
-    uninstall_package ${PACKAGE}
+    uninstall_package "${PACKAGE}"
 }
 ########################################
 send_action() {
     ACTION=$1
     if [[ -z ${ACTION} ]]; then
-        >&2 echo "Missing argument: action"
+        echo >&2 "Missing argument: action"
         exit 1
     fi
     if [[ ${ACTION} == ${ACTION_BOOT} ]]; then
@@ -168,17 +171,17 @@ send_action() {
     else
         VALUE=${ACTION}
     fi
-    adb shell am broadcast -a ${VALUE}
+    adb shell am broadcast -a "${VALUE}"
 }
 ########################################
 print_focused_wnd() {
     adb shell dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp'
 }
 ########################################
-change_wifi_state () {
+change_wifi_state() {
     FLAG=$1
     if [[ -z ${FLAG} ]]; then
-        >&2 echo "Missing argument: flag"
+        echo >&2 "Missing argument: flag"
         exit 1
     fi
     FLAG=$(echo "${FLAG,,}")
@@ -187,97 +190,108 @@ change_wifi_state () {
     elif [[ ${FLAG} == "off" ]]; then
         adb shell svc wifi disable
     else
-        >&2 echo "Unknown flag value. Expected on|off"
+        echo >&2 "Unknown flag value. Expected on|off"
         exit 1
     fi
 }
 ########################################
+print_dev_props() {
+    adb shell getprop | grep --color=never "model\|version.sdk\|manufacturer\|hardware\|platform\|revision\|serialno\|product.name\|brand"
+}
+########################################
 show_keywords() {
-	KEYWORDS=$(printf " %s" "${ALL_KEYWORDS[@]}")
-	echo "${KEYWORDS:1}"
+    KEYWORDS=$(printf " %s" "${ALL_KEYWORDS[@]}")
+    echo "${KEYWORDS:1}"
 }
 ########################################
 get_complete_file() {
-	echo "/etc/bash_completion.d/${ONLY_NAME}"
+    echo "/etc/bash_completion.d/${ONLY_NAME}"
 }
 ########################################
 complete_install() {
-	FILE=$(get_complete_file)
-	TMP_FILE=$(mktemp /tmp/${ONLY_NAME}.XXXXXX)
-	echo '_android_tools()
+    FILE=$(get_complete_file)
+    TMP_FILE=$(mktemp /tmp/"${ONLY_NAME}".XXXXXX)
+    echo '_android_tools()
 {
-  opts=$('$(realpath $0)' --keywords)
+  opts=$('$(realpath "$0")' --keywords)
   local cur prev
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
   return 0
 }
-complete -o nospace -F _android_tools '${FILE_NAME}'' > ${TMP_FILE}
-	sudo mv ${TMP_FILE} ${FILE}
-	sudo chown root:root ${FILE}
-	sudo chmod 644 ${FILE}
+complete -o nospace -F _android_tools '"${FILE_NAME}"'' >"${TMP_FILE}"
+    if [[ $(whoami) == "schumi" ]]; then
+        echo "complete -o nospace -F _android_tools at" >>"${TMP_FILE}"
+    fi
+    sudo mv "${TMP_FILE}" "${FILE}"
+    sudo chown root:root "${FILE}"
+    sudo chmod 644 "${FILE}"
 }
 ########################################
 complete_uninstall() {
-	FILE=$(get_complete_file)
-	sudo rm ${FILE}
+    FILE=$(get_complete_file)
+    sudo rm "${FILE}"
 }
 ######################################## MAIN ########################################
-if [[ "$@" == *"${K_HLP}"* ]] || [[ "$#" -eq 0 ]] ; then
+if [[ "$@" == *"${K_HLP}"* ]] || [[ "$#" -eq 0 ]]; then
     showHelp
     exit 0
 fi
 
 for arg in "$@"; do
-	case ${arg} in
-	    ${K_GET_OS_VER})
-	  	    get_os_versions
-	  	    exit 0
-	  	    ;;
-	    ${K_DEVICES})
-	  	    show_connected_devices
-	  	    exit 0
-	  	    ;;
-	  	${K_GET_DB}=*)
-	  	    get_db ${arg#*=}
-	  	    exit 0
-	  	    ;;
-	  	${K_GET_FILE}=*)
-	  	    get_file ${arg#*=}
-	  	    exit 0
-	  	    ;;
-	  	${K_UNINSTALL}=*)
-	  	    uninstall_app ${arg#*=}
-	  	    exit 0
-	  	    ;;
-	  	${K_SEND_ACTION}=*)
-	  	    send_action ${arg#*=}
-	  	    exit 0
-	  	    ;;
-        ${K_FOCUSED_WND})
-            print_focused_wnd
-            exit 0
-            ;;
-        ${K_WIFI}=*)
-	  	    change_wifi_state ${arg#*=}
-	  	    exit 0
-	  	    ;;
-	    ${K_KWORDS})
-	    	show_keywords
-	    	exit 0
-	    	;;
-	    ${K_CMPL_INS})
-	    	 complete_install
-	    	 exit 0
-	    	 ;;
-	    ${K_CMPL_UNINS})
-	    	 complete_uninstall
-	    	 exit 0
-	    	 ;;
-	    *)
-	         >&2 echo "Unknown argument: ${arg}"
-	         exit 1
-	         ;;
-	  esac
-	done
+    case ${arg} in
+    ${K_GET_OS_VER})
+        get_os_versions
+        exit 0
+        ;;
+    ${K_DEVICES})
+        show_connected_devices
+        exit 0
+        ;;
+    ${K_GET_DB}=*)
+        get_db "${arg#*=}"
+        exit 0
+        ;;
+    ${K_GET_FILE}=*)
+        get_file "${arg#*=}"
+        exit 0
+        ;;
+    ${K_UNINSTALL}=*)
+        uninstall_app "${arg#*=}"
+        exit 0
+        ;;
+    ${K_SEND_ACTION}=*)
+        send_action "${arg#*=}"
+        exit 0
+        ;;
+    ${K_FOCUSED_WND})
+        print_focused_wnd
+        exit 0
+        ;;
+    ${K_WIFI}=*)
+        change_wifi_state "${arg#*=}"
+        exit 0
+        ;;
+    ${K_DEV_PROPS})
+        print_dev_props
+        exit 0
+        ;;
+    ${K_KWORDS})
+        show_keywords
+        exit 0
+        ;;
+    ${K_CMPL_INS})
+        complete_install
+        exit 0
+        ;;
+    ${K_CMPL_UNINS})
+        complete_uninstall
+        exit 0
+        ;;
+    *)
+        echo >&2 "Unknown argument: ${arg}"
+        exit 1
+        ;;
+    esac
+done
