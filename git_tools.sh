@@ -111,7 +111,7 @@ complete_install() {
 }
 complete -o nospace -F _git_tools '${FILE_NAME}'' > ${TMP_FILE}
     if [[ $(whoami) == "schumi" ]]; then
-        echo "complete -o nospace -F _android_tools gt" >>"${TMP_FILE}"
+        echo "complete -o nospace -F _git_tools gt" >>"${TMP_FILE}"
     fi
 	sudo mv ${TMP_FILE} ${FILE}
 	sudo chown root:root ${FILE}
