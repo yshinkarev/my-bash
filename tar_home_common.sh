@@ -4,10 +4,10 @@ INIT_DIR=$(pwd)
 START=$(date +%s)
 
 logStage() {
-	END=$(date +%s)
-	DIFF=$(( $END - $START ))
-	printf "[%06s] " $(($DIFF / 60))m$(($DIFF % 60))s
-	echo $@
+    END=$(date +%s)
+    DIFF=$(($END - $START))
+    printf "[%06s] " $((${DIFF} / 60))m$((${DIFF} % 60))s
+    echo $@
 }
 
 ########################################
@@ -17,108 +17,108 @@ TARGET_DIR=
 TARGET_FILE_NAME=
 COMPRESS=
 
-for arg in "$@"; do
-	case $arg in
-	    --user=*)
-	  	USER_TO_TAR=${arg#*=}
-	  	shift
-	  	;;
-	    --exclude-from=*)
-	  	EXCLUDE_FROM=${arg#*=}
-	  	shift
-	  	;;
-	    --target-dir=*)
-	  	TARGET_DIR=${arg#*=}
-	  	shift
-	  	;;
-	    --target-filename=*)
-	  	TARGET_FILE_NAME=${arg#*=}
-	  	shift
-	  	;;
-	    --compress=*)
-	  	COMPRESS=${arg#*=}
-	  	shift
-	  	;;
-	    *)
-	      echo "Unknown argument: $arg"
-	      exit 1
-	      ;;
-	  esac
-	done
+for ARG in "$@"; do
+    case $ARG in
+    --user=*)
+        USER_TO_TAR=${ARG#*=}
+        shift
+        ;;
+    --exclude-from=*)
+        EXCLUDE_FROM=${ARG#*=}
+        shift
+        ;;
+    --target-dir=*)
+        TARGET_DIR=${ARG#*=}
+        shift
+        ;;
+    --target-filename=*)
+        TARGET_FILE_NAME=${ARG#*=}
+        shift
+        ;;
+    --compress=*)
+        COMPRESS=${ARG#*=}
+        shift
+        ;;
+    *)
+        echo "Unknown argument: ${ARG}"
+        exit 1
+        ;;
+    esac
+done
 ########################################
 
-id "$USER_TO_TAR" > /dev/null 2>&1
-rc=$?;
-if [[ $rc != 0 ]]; then
-	>&2 echo "User $USER_TO_TAR does not exists"
-	exit 1
+id "${USER_TO_TAR}" >/dev/null 2>&1
+RC=$?
+if [[ ${RC} != 0 ]]; then
+    echo >&2 "User ${USER_TO_TAR} does not exists"
+    exit 1
 fi
 
-if [ ! -f $EXCLUDE_FROM ]; then
-	>&2 echo "Exclude file $EXCLUDE_FROM does not exists"
-	exit 1
+if [ ! -f "${EXCLUDE_FROM}" ]; then
+    echo >&2 "Exclude file ${EXCLUDE_FROM} does not exists"
+    exit 1
 fi
 
-HOME_PATH=$(eval echo "~$USER_TO_TAR")
-if [ ! -d $HOME_PATH ]; then
-	>&2 echo "Home directory $HOME_PATH does not exists"
-	exit 1
+HOME_PATH=$(eval echo "~${USER_TO_TAR}")
+if [ ! -d "${HOME_PATH}" ]; then
+    echo >&2 "Home directory ${HOME_PATH} does not exists"
+    exit 1
 fi
 
-if [ -z $TARGET_DIR ]; then
-	TARGET_DIR=$HOME_PATH
+if [ -z "${TARGET_DIR}" ]; then
+    TARGET_DIR=${HOME_PATH}
 fi
 
-if [ -z $TARGET_FILE_NAME ]; then
-	TARGET_FILE_NAME=$USER_TO_TAR@$(hostname)-$(date +"%Y.%m.%d-%H_%M_%S").tar
-	case $COMPRESS in
-		*lbzip2)
-		TARGET_FILE_NAME=$TARGET_FILE_NAME.bz
-		;;
-		*bpzip2)
-		TARGET_FILE_NAME=$TARGET_FILE_NAME.bz
-		;;
-		*pigz)
-		TARGET_FILE_NAME=$TARGET_FILE_NAME.gz
-		;;
-	esac
+if [ -z "${TARGET_FILE_NAME}" ]; then
+    TARGET_FILE_NAME=${USER_TO_TAR}@$(hostname)-$(date +"%Y.%m.%d-%H_%M_%S").tar
+    case $COMPRESS in
+    *lbzip2)
+        TARGET_FILE_NAME=${TARGET_FILE_NAME}.bz
+        ;;
+    *bpzip2)
+        TARGET_FILE_NAME=${TARGET_FILE_NAME}.bz
+        ;;
+    *pigz)
+        TARGET_FILE_NAME=${TARGET_FILE_NAME}.gz
+        ;;
+    esac
 fi
 
-if [ ! -d $TARGET_DIR ]; then
-	>&2 echo "Target directory $TARGET_DIR does not exists"
-	exit 1
+if [ ! -d "${TARGET_DIR}" ]; then
+    echo >&2 "Target directory ${TARGET_DIR} does not exists"
+    exit 1
 fi
 
-DEST_PATH=$TARGET_DIR/$TARGET_FILE_NAME
+DEST_PATH=${TARGET_DIR}/${TARGET_FILE_NAME}
 ########################################
-logStage "Compressing to $DEST_PATH"
+logStage "Compressing to ${DEST_PATH}"
 # Needed, because used cd, but target dir can be set as relative path.
-DEST_PATH=$(readlink -f $DEST_PATH)
-cd $HOME_PATH
+DEST_PATH=$(readlink -f "${DEST_PATH}")
+cd "${HOME_PATH}"
 
-if [ -z $COMPRESS ]; then
-	tar -cf $DEST_PATH . --exclude-from=$EXCLUDE_FROM
+if [ -z "${COMPRESS}" ]; then
+    tar -cf "${DEST_PATH}" . --exclude-from="${EXCLUDE_FROM}"
 else
-	tar -I $COMPRESS -cf $DEST_PATH . --exclude-from=$EXCLUDE_FROM
+    tar -I "${COMPRESS}" -cf "${DEST_PATH}" . --exclude-from="${EXCLUDE_FROM}"
 fi
 
-cd - > /dev/null
+cd - >/dev/null
 logStage "Testing"
-if ! tar tf $DEST_PATH &> /dev/null; then
-    >&2 echo "Compressed archive does not verified (not found)"
+if ! tar tf "${DEST_PATH}" &>/dev/null; then
+    echo >&2 "Compressed archive does not verified (not found)"
     exit 1
 fi
 
 logStage "Calculating MD5"
-cd $TARGET_DIR
-md5sum $TARGET_FILE_NAME > $TARGET_FILE_NAME.md5
+cd "${TARGET_DIR}"
+md5sum "${TARGET_FILE_NAME}" >"${TARGET_FILE_NAME}".md5
 
 END=$(date +%s)
-DIFF=$(( $END - $START ))
+DIFF=$((${END} - ${START}))
 logStage "Finished"
-cd $INIT_DIR > /dev/null
+cd "${INIT_DIR}" >/dev/null
 
 SCRIPT_NAME=$(basename "$0")
 TIME=$(logStage)
-notify-send "$SCRIPT_NAME finished in $TIME"
+notify-send "${SCRIPT_NAME} finished in ${TIME}"
 beep.sh

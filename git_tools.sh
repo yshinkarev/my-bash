@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
 INIT_DIR=$(pwd)
-FILE_NAME=$(basename "$0"); ONLY_NAME=${FILE_NAME%.*}; LOG_FILE=/tmp/${ONLY_NAME}.log
+FILE_NAME=$(basename "$0")
+ONLY_NAME=${FILE_NAME%.*}
+LOG_FILE=/tmp/${ONLY_NAME}.log
 CLONE_TO_DIR=
 URL=
 
 set -e
-function cleanup {
-	cd ${INIT_DIR} > /dev/null
+function cleanup() {
+    cd "${INIT_DIR}" >/dev/null
 }
 trap cleanup EXIT
 
@@ -27,9 +29,9 @@ K_CMPL_UNINS="--complete-uninstall"
 K_URL="--url"
 ALL_KEYWORDS=("${K_BR_GET}" "${K_TAGS_ALL}" "${K_PUSH_TO_REP}=" "${K_BR_ALL}" "${K_BR_PULL_ALL}" "${K_IGN_TOGZ}" "${K_MY_CMTS}" "${K_KWORDS}" "${K_HLP}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_CLONE_TO}=" "${K_URL}=")
 ########################################
-showHelp() {
-	cat << EOF
-Usage: $(basename $0) <command>
+show_help() {
+    cat <<EOF
+Usage: $(basename "$0") <command>
 Simple wrapper for git.
 
   ${K_BR_GET}           Get current branch
@@ -49,39 +51,39 @@ EOF
 }
 ########################################
 get_current_branch() {
-	git branch | grep \* | cut -d ' ' -f2
+    git branch | grep \* | cut -d ' ' -f2
 }
 ########################################
 get_all_tags() {
-	git log --tags --simplify-by-decoration --pretty="format:%ai %d" | grep "tag:"
+    git log --tags --simplify-by-decoration --pretty="format:%ai %d" | grep "tag:"
 
 }
 ########################################
 push_to_rep() {
-	URL=$1
-	if [[ -z "$URL" ]]; then
-		>&2 echo "Missing value URL"
-		exit 1
-	fi
-	git remote set-url origin --add ${URL}
-	git push -u origin --all
-	git push -u origin --tags
+    URL=$1
+    if [[ -z "$URL" ]]; then
+        echo >&2 "Missing value URL"
+        exit 1
+    fi
+    git remote set-url origin --add "${URL}"
+    git push -u origin --all
+    git push -u origin --tags
 }
 ########################################
 get_all_branches() {
-	git branch -r --format='%(authorname)|%(refname:short)|%(committerdate:iso)' | column -s\| -t
+    git branch -r --format='%(authorname)|%(refname:short)|%(committerdate:iso)' | column -s\| -t
 }
 ########################################
 pull_all_branches() {
-	git branch -r | grep -v '\->' | while read remote; do git branch --track "${remote#origin/}" "$remote"; done
-	git fetch --all
-	git pull --all
+    git branch -r | grep -v '\->' | while read remote; do git branch --track "${remote#origin/}" "$remote"; done
+    git fetch --all
+    git pull --all
 }
 ########################################
 archive_ignored_files() {
-	ARCHIVE_FILE_NAME=${PWD##*/}.tar.gz
-	git ls-files --others --ignored --exclude-standard | tar -cf ${ARCHIVE_FILE_NAME} -I pigz -T -
-	echo ${ARCHIVE_FILE_NAME}
+    ARCHIVE_FILE_NAME=${PWD##*/}.tar.gz
+    git ls-files --others --ignored --exclude-standard | tar -cf "${ARCHIVE_FILE_NAME}" -I pigz -T -
+    echo "${ARCHIVE_FILE_NAME}"
 }
 ########################################
 show_my_commits() {
@@ -89,117 +91,118 @@ show_my_commits() {
 }
 ########################################
 show_keywords() {
-	KEYWORDS=$(printf " %s" "${ALL_KEYWORDS[@]}")
-	echo "${KEYWORDS:1}"
+    KEYWORDS=$(printf " %s" "${ALL_KEYWORDS[@]}")
+    echo "${KEYWORDS:1}"
 }
 ########################################
 get_complete_file() {
-	echo "/etc/bash_completion.d/${ONLY_NAME}"
+    echo "/etc/bash_completion.d/${ONLY_NAME}"
 }
 ########################################
 complete_install() {
-	FILE=$(get_complete_file)
-	TMP_FILE=$(mktemp /tmp/${ONLY_NAME}.XXXXXX)
-	echo '_git_tools()
+    FILE=$(get_complete_file)
+    TMP_FILE=$(mktemp /tmp/"${ONLY_NAME}".XXXXXX)
+    echo '_git_tools()
 {
-  opts=$('$(realpath $0)' --keywords)
+  opts=$('$(realpath "$0")' --keywords)
   local cur prev
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
   return 0
 }
-complete -o nospace -F _git_tools '${FILE_NAME}'' > ${TMP_FILE}
+complete -o nospace -F _git_tools '"${FILE_NAME}"'' >"${TMP_FILE}"
     if [[ $(whoami) == "schumi" ]]; then
         echo "complete -o nospace -F _git_tools gt" >>"${TMP_FILE}"
     fi
-	sudo mv ${TMP_FILE} ${FILE}
-	sudo chown root:root ${FILE}
-	sudo chmod 644 ${FILE}
+    sudo mv "${TMP_FILE}" "${FILE}"
+    sudo chown root:root "${FILE}"
+    sudo chmod 644 "${FILE}"
 }
 ########################################
 complete_uninstall() {
-	FILE=$(get_complete_file)
-	sudo rm ${FILE}
+    FILE=$(get_complete_file)
+    sudo rm "${FILE}"
 }
 clone_to() {
     DIR=$1
     URL=$2
     if [[ -z "${URL}" ]]; then
-        2> echo "Missing argument --url=URL"
+        "Missing argument --url=URL" 2>echo
         exit 1
     fi
     if [[ ! -d "${DIR}" ]]; then
-        2> echo "Directory ${CLONE_TO_DIR} doesn't exists."
+        "Directory ${CLONE_TO_DIR} doesn't exists." 2>echo
         exit 1
-	fi
-	REP_DIR=$(basename "${URL}"); REP_DIR=${REP_DIR%.*};
-	cd ${DIR}
-	git clone ${URL} ${REP_DIR}
+    fi
+    REP_DIR=$(basename "${URL}")
+    REP_DIR=${REP_DIR%.*}
+    cd "${DIR}"
+    git clone "${URL}" "${REP_DIR}"
 }
 ######################################## MAIN ########################################
-if [[ "$@" == *"${K_HLP}"* ]] || [[ "$#" -eq 0 ]] ; then
-	showHelp
-	exit 0
+if [[ "$@" == *"${K_HLP}"* ]] || [[ "$#" -eq 0 ]]; then
+    show_help
+    exit 0
 fi
 
 for arg in "$@"; do
-	case ${arg} in
-	    ${K_BR_GET})
-	    	get_current_branch
-	    	exit 0
-	    	;;
-	    ${K_TAGS_ALL})
-	    	get_all_tags
-	    	exit 0
-	    	;;
-	    ${K_PUSH_TO_REP}=*)
-            	URL=${arg#*=}
-            	push_to_rep ${URL}
-            	exit 0
-            	;;
-	    ${K_BR_ALL})
-	    	get_all_branches
-	    	exit 0
-	    	;;
-	    ${K_BR_PULL_ALL})
-		pull_all_branches
-	    	exit 0
-	    	;;
-	    ${K_IGN_TOGZ})
-	    	archive_ignored_files
-	    	exit 0
-	    	;;
-            ${K_MY_CMTS})
-	    	show_my_commits
-	    	exit 0
-	    	;;
-	    ${K_KWORDS})
-	    	show_keywords
-	    	exit 0
-	    	;;
-	    ${K_CMPL_INS})
-	    	complete_install
-	    	exit 0
-	    	;;
-	    ${K_CMPL_UNINS})
-	    	complete_uninstall
-	    	exit 0
-	    	;;
-	    ${K_CLONE_TO}=*)
-	        CLONE_TO_DIR=${arg#*=}
-	    	;;
-	    ${K_URL}=*)
-	        URL=${arg#*=}
-	        ;;
-	    *)
-	        >&2 echo "Unknown argument: $arg"
-	        exit 1
-	        ;;
-	  esac
-	done
+    case ${arg} in
+    ${K_BR_GET})
+        get_current_branch
+        exit 0
+        ;;
+    ${K_TAGS_ALL})
+        get_all_tags
+        exit 0
+        ;;
+    ${K_PUSH_TO_REP}=*)
+        URL=${arg#*=}
+        push_to_rep "${URL}"
+        exit 0
+        ;;
+    ${K_BR_ALL})
+        get_all_branches
+        exit 0
+        ;;
+    ${K_BR_PULL_ALL})
+        pull_all_branches
+        exit 0
+        ;;
+    ${K_IGN_TOGZ})
+        archive_ignored_files
+        exit 0
+        ;;
+    ${K_MY_CMTS})
+        show_my_commits
+        exit 0
+        ;;
+    ${K_KWORDS})
+        show_keywords
+        exit 0
+        ;;
+    ${K_CMPL_INS})
+        complete_install
+        exit 0
+        ;;
+    ${K_CMPL_UNINS})
+        complete_uninstall
+        exit 0
+        ;;
+    ${K_CLONE_TO}=*)
+        CLONE_TO_DIR=${arg#*=}
+        ;;
+    ${K_URL}=*)
+        URL=${arg#*=}
+        ;;
+    *)
+        echo >&2 "Unknown argument: $arg"
+        exit 1
+        ;;
+    esac
+done
 
 if [[ -n "${CLONE_TO_DIR}" ]]; then
-    clone_to ${CLONE_TO_DIR} ${URL}
+    clone_to "${CLONE_TO_DIR}" "${URL}"
     exit 0
 fi
