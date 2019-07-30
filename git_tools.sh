@@ -87,7 +87,7 @@ archive_ignored_files() {
 }
 ########################################
 show_my_commits() {
-    git shortlog --author="$(git config user.name)"
+    git shortlog --author="$(git config user.name)" "$@"
 }
 ########################################
 show_keywords() {
@@ -174,7 +174,8 @@ for arg in "$@"; do
         exit 0
         ;;
     ${K_MY_CMTS})
-        show_my_commits
+        shift
+        show_my_commits "$@"
         exit 0
         ;;
     ${K_KWORDS})
