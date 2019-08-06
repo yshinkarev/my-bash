@@ -18,6 +18,7 @@ K_CMPL_INS="--complete-install"
 K_CMPL_UNINS="--complete-uninstall"
 K_GET_DB="--get-db"
 K_GET_FILE="--get-file"
+K_GET_PKG_DATA="--get-data"
 K_UNINSTALL="--uninstall"
 K_SEND_ACTION="--send-action"
 ACTION_BOOT="boot"
@@ -26,27 +27,28 @@ K_FOCUSED_WND="--focused-wnd"
 K_WIFI="--wifi"
 K_DEV_PROPS="--dev-props"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}="  "${K_GET_PKG_DATA}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_HLP}")
 ########################################
 showHelp() {
     cat <<EOF
 Usage: $(basename "$0") <command>
 Simple wrapper for android.
 
-  ${K_GET_OS_VER}      Print android OS versions of connected devices
-  ${K_DEVICES}              Print connected devices
-  ${K_GET_DB}=FILE          Download sqlite3 database with name FILE from internal storage (uses stetho, dumpsys)
-  ${K_GET_FILE}=FILE        Download file from internal storage (uses stetho, dumpsys)
-  ${K_UNINSTALL}=TARGET     Uninstall application by TARGET, where TARGET is package name or local apk-file
-  ${K_SEND_ACTION}=ACTION   Send broadcast action ACTION (standart or own).
-                         Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
-  ${K_FOCUSED_WND}          Print focused window
-  ${K_WIFI}=FLAG            Enable/disable wifi, FLAG=on|off
-  ${K_DEV_PROPS}            Print device properties
-  ${K_KWORDS}             Print available arguments
-  ${K_CMPL_INS}     Configure auto completion for script
-  ${K_CMPL_UNINS}   Remove auto completion for script
-  ${K_HLP}                 Print this help and exit
+  ${K_GET_OS_VER}         Print android OS versions of connected devices
+  ${K_DEVICES}                 Print connected devices
+  ${K_GET_DB}=FILE             Download sqlite3 database with name FILE from internal storage (uses stetho, dumpsys)
+  ${K_GET_FILE}=FILE           Download file from internal storage (uses stetho, dumpsys)
+  ${K_GET_PKG_DATA}=PACKAGE_NAME   Download application directory from internal storage (needed su)
+  ${K_UNINSTALL}=TARGET        Uninstall application by TARGET, where TARGET is package name or local apk-file
+  ${K_SEND_ACTION}=ACTION      Send broadcast action ACTION (standart or own).
+                            Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
+  ${K_FOCUSED_WND}             Print focused window
+  ${K_WIFI}=FLAG               Enable/disable wifi, FLAG=on|off
+  ${K_DEV_PROPS}               Print device properties
+  ${K_KWORDS}                Print available arguments
+  ${K_CMPL_INS}        Configure auto completion for script
+  ${K_CMPL_UNINS}      Remove auto completion for script
+  ${K_HLP}                    Print this help and exit
 EOF
 }
 ########################################
@@ -128,6 +130,49 @@ get_file() {
     fi
     check_dumpapp_avail
     download_file "${NAME}"
+}
+########################################
+move_file() {
+	adb shell "su -c 'chmod 777 $1'"
+	adb pull $1
+	adb shell "su -c 'rm -f $1'"
+}
+########################################
+move_extract_file() {
+	PREFIX=$1
+	PKG=$2
+	REMOTE_PATH=$3
+	TAR_FILE=${PKG}.${PREFIX}.tar
+	TAR_PATH=/sdcard/${TAR_FILE}
+	adb shell "su -c 'cd ${REMOTE_PATH}/${PREFIX} && tar cvf ${TAR_PATH} . > /dev/null'"
+	move_file ${TAR_PATH}
+	mkdir ${PKG}/${PREFIX}
+	tar -xf ${TAR_FILE} -C ${PKG}/${PREFIX}
+	rm -f ${TAR_FILE}
+}
+########################################
+get_data() {
+    PKG=$1
+    if [[ -z "${PKG}" ]]; then
+	    >&2 echo "Missing argument: package name"
+	    exit 1
+    fi
+    REMOTE_PATH=/data/data/${PKG}
+    TAR_FILE=${PKG}.tar
+    TAR_PATH=/sdcard/${TAR_FILE}
+    adb shell "su -c 'cd ${REMOTE_PATH} && tar cvf ${TAR_PATH} . --exclude=cache  --exclude=files > /dev/null'"
+    move_file ${TAR_PATH}
+    mkdir ${PKG}
+    tar -xf ${TAR_FILE} -C ${PKG}
+    rm -f ${TAR_FILE}
+
+    move_extract_file cache ${PKG} ${REMOTE_PATH}
+    move_extract_file files ${PKG} ${REMOTE_PATH}
+
+    DB_PATH=${PKG}/databases
+    for FILE in $(find ${DB_PATH} -type f -name *.db 2>/dev/null); do
+        sqlite3 ${FILE} VACUUM
+    done
 }
 ########################################
 uninstall_package() {
@@ -255,6 +300,10 @@ for arg in "$@"; do
         ;;
     ${K_GET_FILE}=*)
         get_file "${arg#*=}"
+        exit 0
+        ;;
+    ${K_GET_PKG_DATA}=*)
+        get_data "${arg#*=}"
         exit 0
         ;;
     ${K_UNINSTALL}=*)
