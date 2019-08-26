@@ -16,5 +16,4 @@ if [ ! -f $FILE ]; then
 	    >&2 echo "File not found"
 fi
 
-# May be keytool (w/o sh) your choice.
-keytool.sh -list -v -keystore $FILE -alias androiddebugkey -storepass android -keypass android
+keytool -list -v -keystore $FILE -alias androiddebugkey -storepass android -keypass android
