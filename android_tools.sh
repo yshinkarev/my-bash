@@ -4,7 +4,6 @@ INIT_DIR=$(pwd)
 FILE_NAME=$(basename "$0")
 ONLY_NAME=${FILE_NAME%.*} #LOG_FILE=/tmp/${ONLY_NAME}.log
 
-set -e
 function cleanup() {
     cd "${INIT_DIR}" >/dev/null
 }
@@ -170,7 +169,7 @@ get_data() {
     move_extract_file files ${PKG} ${REMOTE_PATH}
 
     DB_PATH=${PKG}/databases
-    for FILE in $(find ${DB_PATH} -type f -name *.db 2>/dev/null); do
+    for FILE in $(find ${DB_PATH} -type f -name *db 2>/dev/null); do
         sqlite3 ${FILE} VACUUM
     done
 }
