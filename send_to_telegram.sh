@@ -1,6 +1,6 @@
 #!/bin/bash
 
-AUTH_FILE=${0%.*}; AUTH_FILE=$AUTH_FILE.conf
+AUTH_FILE=${0%.*}; AUTH_FILE=$(dirname "$0")/$AUTH_FILE.conf
 
 if [ -f $AUTH_FILE ]; then
 	mapfile -t AUTH < $AUTH_FILE
