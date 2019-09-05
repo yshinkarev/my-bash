@@ -52,12 +52,13 @@ sudo systemctl status $SERVICE
 ########################################
 
 uninstallService() {
-echo "  Stop service"
+echo "  Stop service $SERVICE"
 sudo systemctl stop $SERVICE
-echo "  Disable service"
+echo "  Disable service $SERVICE"
 sudo systemctl stop $SERVICE
-echo "  Remove service file"
-sudo rm /etc/systemd/system/$SERVICE
+FILE=/etc/systemd/system/$SERVICE
+echo "  Remove service file $FILE"
+sudo rm $FILE
 echo "  Run daemon-reload"
 sudo systemctl daemon-reload
 echo "  Run reset-failed"

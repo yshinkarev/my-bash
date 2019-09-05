@@ -1,23 +1,28 @@
 #!/bin/bash
 
-AUTH_FILE=${0%.*}; AUTH_FILE=$(dirname "$0")/$AUTH_FILE.conf
+REAL_PATH=$(readlink -f "$0")
+PTH=$(dirname "${REAL_PATH}")
+FILE_NAME=$(basename "${REAL_PATH}")
+ONLY_NAME=${FILE_NAME%.*}
+AUTH_FILE=$PTH/$ONLY_NAME.conf
 
 if [ -f $AUTH_FILE ]; then
-	mapfile -t AUTH < $AUTH_FILE
+    mapfile -t AUTH < $AUTH_FILE
 fi
 
 if [ -z "$CHAT_ID" ]; then
-	CHAT_ID=${AUTH[0]}
+    CHAT_ID=${AUTH[0]}
 fi
 
 if [ -z "$BOT_TOKEN" ]; then
-	BOT_TOKEN=${AUTH[1]}
+    BOT_TOKEN=${AUTH[1]}
 fi
 
 if [ -z "$CHAT_ID" ] || [ -z "$BOT_TOKEN" ]; then
-	>&2 echo "No CHAT_ID or BOT_TOKEN"
-	exit 1
+    >&2 echo "No CHAT_ID or BOT_TOKEN. Check $ONLY_NAME file"
+    exit 1
 fi
+
 
 ########################################
 
