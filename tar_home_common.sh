@@ -97,9 +97,9 @@ DEST_PATH=$(readlink -f "${DEST_PATH}")
 cd "${HOME_PATH}"
 
 if [ -z "${COMPRESS}" ]; then
-    tar -cf "${DEST_PATH}" . --exclude-from="${EXCLUDE_FROM}"
+    tar --exclude-from="${EXCLUDE_FROM}" --exclude=${TARGET_FILE_NAME} -cf "${DEST_PATH}" .
 else
-    tar -I "${COMPRESS}" -cf "${DEST_PATH}" . --exclude-from="${EXCLUDE_FROM}"
+    tar --exclude-from="${EXCLUDE_FROM}" --exclude=${TARGET_FILE_NAME} -I "${COMPRESS}" -cf "${DEST_PATH}" .
 fi
 
 cd - >/dev/null
