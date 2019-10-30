@@ -42,10 +42,11 @@ for arg in "$@"; do
 
 ########################################
 
+CMD='adb shell "pm list packages -f" | sed -e "s/==//"'
 if [ -z "$GREP_PATTERN" ]; then
-	PACKAGES=($(adb shell "pm list packages -f" | cut -f 2 -d "="))
+  PACKAGES=($(eval ${CMD} | cut -f 2 -d "="))
 else
-	PACKAGES=($(adb shell "pm list packages -f" | grep -iE "$GREP_PATTERN" | cut -f 2 -d "="))
+	PACKAGES=($(eval ${CMD} | grep -iE "$GREP_PATTERN" | cut -f 2 -d "="))
 fi
 
 if [ ${#PACKAGES[@]} == 0 ]; then
