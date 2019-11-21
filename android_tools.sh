@@ -19,6 +19,7 @@ K_GET_DB="--get-db"
 K_GET_FILE="--get-file"
 K_GET_PKG_DATA="--get-data"
 K_UNINSTALL="--uninstall"
+K_PULL_APK="--pull-apk"
 K_SEND_ACTION="--send-action"
 ACTION_BOOT="boot"
 ACTION_BOOT_V="ACTION_BOOT_COMPLETED"
@@ -26,7 +27,7 @@ K_FOCUSED_WND="--focused-wnd"
 K_WIFI="--wifi"
 K_DEV_PROPS="--dev-props"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}="  "${K_GET_PKG_DATA}=" "${K_UNINSTALL}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_HLP}")
 ########################################
 showHelp() {
     cat <<EOF
@@ -39,6 +40,7 @@ Simple wrapper for android.
   ${K_GET_FILE}=FILE           Download file from internal storage (uses stetho, dumpsys)
   ${K_GET_PKG_DATA}=PACKAGE_NAME   Download application directory from internal storage (needed su)
   ${K_UNINSTALL}=TARGET        Uninstall application by TARGET, where TARGET is package name or local apk-file
+  ${K_PULL_APK}=PACKAGE_NAME   Download apk from device by package name
   ${K_SEND_ACTION}=ACTION      Send broadcast action ACTION (standart or own).
                             Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
   ${K_FOCUSED_WND}             Print focused window
@@ -132,29 +134,29 @@ get_file() {
 }
 ########################################
 move_file() {
-	adb shell "su -c 'chmod 777 $1'"
-	adb pull $1
-	adb shell "su -c 'rm -f $1'"
+    adb shell "su -c 'chmod 777 $1'"
+    adb pull $1
+    adb shell "su -c 'rm -f $1'"
 }
 ########################################
 move_extract_file() {
-	PREFIX=$1
-	PKG=$2
-	REMOTE_PATH=$3
-	TAR_FILE=${PKG}.${PREFIX}.tar
-	TAR_PATH=/sdcard/${TAR_FILE}
-	adb shell "su -c 'cd ${REMOTE_PATH}/${PREFIX} && tar cvf ${TAR_PATH} . > /dev/null'"
-	move_file ${TAR_PATH}
-	mkdir ${PKG}/${PREFIX}
-	tar -xf ${TAR_FILE} -C ${PKG}/${PREFIX}
-	rm -f ${TAR_FILE}
+    PREFIX=$1
+    PKG=$2
+    REMOTE_PATH=$3
+    TAR_FILE=${PKG}.${PREFIX}.tar
+    TAR_PATH=/sdcard/${TAR_FILE}
+    adb shell "su -c 'cd ${REMOTE_PATH}/${PREFIX} && tar cvf ${TAR_PATH} . > /dev/null'"
+    move_file ${TAR_PATH}
+    mkdir ${PKG}/${PREFIX}
+    tar -xf ${TAR_FILE} -C ${PKG}/${PREFIX}
+    rm -f ${TAR_FILE}
 }
 ########################################
 get_data() {
     PKG=$1
     if [[ -z "${PKG}" ]]; then
-	    >&2 echo "Missing argument: package name"
-	    exit 1
+        echo >&2 "Missing argument: package name"
+        exit 1
     fi
     REMOTE_PATH=/data/data/${PKG}
     TAR_FILE=${PKG}.tar
@@ -169,7 +171,7 @@ get_data() {
     move_extract_file files ${PKG} ${REMOTE_PATH}
 
     DB_PATH=${PKG}/databases
-    for FILE in $(find ${DB_PATH} -type f -name *db 2>/dev/null); do
+    for FILE in $(find ${DB_PATH} -type f -name "*db" 2>/dev/null); do
         sqlite3 ${FILE} VACUUM
     done
 }
@@ -193,7 +195,7 @@ uninstall_app() {
             exit 1
         fi
         PACKAGE_INFO=$(aapt dump badging "${TARGET}" | grep -E "package|launchable-activity")
-        PACKAGE=$(echo "${PACKAGE_INFO}" | sed "s/.*package: name='\([^']*\)'.*/\1/")
+        PACKAGE=$("${PACKAGE_INFO}" | sed "s/.*package: name='\([^']*\)'.*/\1/")
         if [[ -z ${PACKAGE} ]]; then
             echo >&2 "Package name not found in file ${TARGET}"
             exit 1
@@ -204,13 +206,30 @@ uninstall_app() {
     uninstall_package "${PACKAGE}"
 }
 ########################################
+pull_apk() {
+    PKG=$1
+    if [[ -z "${PKG}" ]]; then
+        echo >&2 "Missing argument: package name"
+        exit 1
+    fi
+
+    RES=$(adb shell pm path "${PKG}" | grep -v "split")
+    PTH=$(echo "${RES}" | grep -Po 'package:\K[^"]+' | tr -d '\r')
+    if [ -z "${PTH}" ]; then
+        echo >&2 "Package not found"
+        exit 1
+    fi
+    echo "APK path: '${PTH}'"
+    adb pull ${PTH} "${PKG}.apk"
+}
+########################################
 send_action() {
     ACTION=$1
-    if [[ -z ${ACTION} ]]; then
+    if [ -z ${ACTION} ]; then
         echo >&2 "Missing argument: action"
         exit 1
     fi
-    if [[ ${ACTION} == ${ACTION_BOOT} ]]; then
+    if [ ${ACTION} == ${ACTION_BOOT} ]; then
         VALUE="android.intent.action.${ACTION_BOOT_V}"
     else
         VALUE=${ACTION}
@@ -307,6 +326,10 @@ for arg in "$@"; do
         ;;
     ${K_UNINSTALL}=*)
         uninstall_app "${arg#*=}"
+        exit 0
+        ;;
+    ${K_PULL_APK}=*)
+        pull_apk "${arg#*=}"
         exit 0
         ;;
     ${K_SEND_ACTION}=*)
