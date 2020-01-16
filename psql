@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "$@" = *"--query-only"* ]]; then
+if [[ "$@" == *"--query-only"* ]]; then
 	echo "psql: {$@}"
 	exit
 fi
@@ -9,4 +9,8 @@ if [[ -z "${PSQL}" ]]; then
     PSQL=/usr/bin/psql
 fi
 
-${PSQL} "$@"
+if [ -z "${DB_USER}" ]; then
+    source $(dirname "$0")/service/db.properties
+fi
+
+${PSQL} --dbname=${DB_DATABASE} --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT}

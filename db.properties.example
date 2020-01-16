@@ -1,0 +1,4 @@
+DB_USER=<username>
+DB_DATABASE=<db-name>
+DB_HOST=localhost
+DB_PORT=5432
