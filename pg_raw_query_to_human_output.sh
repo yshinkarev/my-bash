@@ -4,7 +4,7 @@ read -p "Enter table name: " TABLE_NAME
 # John,Smith,....
 read -p "Enter raw query result: " RAW_QUERY
 
-COLUMNS=$(psql -Ac "select * from $TABLE_NAME where false;" $@ | head -n 1)
+COLUMNS=$($(dirname "$0")/psql -Ac "select * from $TABLE_NAME where false;" $@ | head -n 1)
 IFS='|' read -ra COLUMNS_ARRAY <<< "$COLUMNS"
 IFS=',' read -ra ARGUMENTS_ARRAY <<< "$RAW_QUERY"
 

@@ -7,4 +7,4 @@ if [ -z "$FILE_NAME" ]; then
 fi
 shift 1
 
-pg_restore --clean $FILE_NAME
+$(dirname "$0")/pg_restore --clean $FILE_NAME

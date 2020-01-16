@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ -z "${DB_USER}" ]; then
+    source $(dirname "$0")/db.properties
+fi
+
+/usr/bin/pg_dumpall --dbname=${DB_DATABASE} --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} "$@"

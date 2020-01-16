@@ -8,4 +8,4 @@ if [ -z "$TABLE_NAME" ]; then
 fi
 shift 1
 
-psql -Ac "select * from $TABLE_NAME where false;" $@ | head -n 1
+$(dirname "$0")/psql -Ac "select * from $TABLE_NAME where false;" $@ | head -n 1
