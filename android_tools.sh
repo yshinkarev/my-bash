@@ -18,6 +18,9 @@ K_CMPL_UNINS="--complete-uninstall"
 K_GET_DB="--get-db"
 K_GET_FILE="--get-file"
 K_GET_PKG_DATA="--get-data"
+K_DATA_BACKUP="--data-backup"
+K_DATA_RESTORE="--data-restore"
+K_PREFS="--files-prefs"
 K_UNINSTALL="--uninstall"
 K_PULL_APK="--pull-apk"
 K_SEND_ACTION="--send-action"
@@ -27,29 +30,32 @@ K_FOCUSED_WND="--focused-wnd"
 K_WIFI="--wifi"
 K_DEV_PROPS="--dev-props"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_DATA_BACKUP}=" "${K_DATA_RESTORE}=" "${K_PREFS}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_HLP}")
 ########################################
 showHelp() {
     cat <<EOF
 Usage: $(basename "$0") <command>
 Simple wrapper for android.
 
-  ${K_GET_OS_VER}         Print android OS versions of connected devices
-  ${K_DEVICES}                 Print connected devices
-  ${K_GET_DB}=FILE             Download sqlite3 database with name FILE from internal storage (uses stetho, dumpsys)
-  ${K_GET_FILE}=FILE           Download file from internal storage (uses stetho, dumpsys)
-  ${K_GET_PKG_DATA}=PACKAGE_NAME   Download application directory from internal storage (needed su)
-  ${K_UNINSTALL}=TARGET        Uninstall application by TARGET, where TARGET is package name or local apk-file
-  ${K_PULL_APK}=PACKAGE_NAME   Download apk from device by package name
-  ${K_SEND_ACTION}=ACTION      Send broadcast action ACTION (standart or own).
-                            Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
-  ${K_FOCUSED_WND}             Print focused window
-  ${K_WIFI}=FLAG               Enable/disable wifi, FLAG=on|off
-  ${K_DEV_PROPS}               Print device properties
-  ${K_KWORDS}                Print available arguments
-  ${K_CMPL_INS}        Configure auto completion for script
-  ${K_CMPL_UNINS}      Remove auto completion for script
-  ${K_HLP}                    Print this help and exit
+  ${K_GET_OS_VER}           Print android OS versions of connected devices
+  ${K_DEVICES}                   Print connected devices
+  ${K_GET_DB}=FILE               Download sqlite3 database with name FILE from internal storage (uses stetho, dumpsys)
+  ${K_GET_FILE}=FILE             Download file from internal storage (uses stetho, dumpsys)
+  ${K_GET_PKG_DATA}=PACKAGE_NAME     Download application directory from internal storage (needed su)
+  ${K_DATA_BACKUP}=PACKAGE_NAME  Backup application user data (needed root)
+  ${K_DATA_RESTORE}=PACKAGE_NAME  Restore application user data (needed root)
+  ${K_PREFS}=PACKAGE_NAME  Print content of preferences (needed root)
+  ${K_UNINSTALL}=TARGET          Uninstall application by TARGET, where TARGET is package name or local apk-file
+  ${K_PULL_APK}=PACKAGE_NAME     Download apk from device by package name
+  ${K_SEND_ACTION}=ACTION        Send broadcast action ACTION (standart or own).
+                              Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
+  ${K_FOCUSED_WND}               Print focused window
+  ${K_WIFI}=FLAG                 Enable/disable wifi, FLAG=on|off
+  ${K_DEV_PROPS}                 Print device properties
+  ${K_KWORDS}                  Print available arguments
+  ${K_CMPL_INS}          Configure auto completion for script
+  ${K_CMPL_UNINS}        Remove auto completion for script
+  ${K_HLP}                      Print this help and exit
 EOF
 }
 ########################################
@@ -152,12 +158,17 @@ move_extract_file() {
     rm -f ${TAR_FILE}
 }
 ########################################
-get_data() {
-    PKG=$1
-    if [[ -z "${PKG}" ]]; then
+check_package_name() {
+    if [[ -z "$1" ]]; then
         echo >&2 "Missing argument: package name"
         exit 1
     fi
+}
+########################################
+get_data() {
+    check_package_name "$1"
+    PKG=$1
+
     REMOTE_PATH=/data/data/${PKG}
     TAR_FILE=${PKG}.tar
     TAR_PATH=/sdcard/${TAR_FILE}
@@ -174,6 +185,43 @@ get_data() {
     for FILE in $(find ${DB_PATH} -type f -name "*db" 2>/dev/null); do
         sqlite3 ${FILE} VACUUM
     done
+}
+########################################
+backup_data() {
+    check_package_name "$1"
+    PKG=$1
+    FILE_NAME=${PKG}.tar
+    REMOTE_FILE=/tmp/${FILE_NAME}
+    echo "Archive data to ${REMOTE_FILE} at android device"
+    adb shell "cd /data/data && tar cvf ${REMOTE_FILE} ${PKG}"
+    RC=$?
+    if [[ ${RC} != 0 ]]; then
+        exit ${RC}
+    fi
+    echo "Pull archive to ${FILE_NAME} at local device"
+    adb pull "${REMOTE_FILE}" .
+    adb shell rm -f "${REMOTE_FILE}"
+}
+########################################
+print_prefs() {
+    check_package_name "$1"
+    adb shell "cat /data/data/$1/shared_prefs/*.xml"
+}
+########################################
+restore_data() {
+    check_package_name "$1"
+    PKG=$1
+    FILE_NAME=${PKG}.tar
+    LOC_FILE=${FILE_NAME}
+    echo "Push file ${LOC_FILE}"
+    REMOTE_FILE=/tmp/${LOC_FILE}
+    adb push "${LOC_FILE}" "${REMOTE_FILE}"
+    RC=$?
+    if [[ ${RC} != 0 ]]; then
+        exit ${RC}
+    fi
+    echo "Extrach archive from ${REMOTE_FILE} at android device"
+    adb shell "cd /data/data && tar xvf ${REMOTE_FILE}"
 }
 ########################################
 uninstall_package() {
@@ -207,11 +255,8 @@ uninstall_app() {
 }
 ########################################
 pull_apk() {
+    check_package_name "$1"
     PKG=$1
-    if [[ -z "${PKG}" ]]; then
-        echo >&2 "Missing argument: package name"
-        exit 1
-    fi
 
     RES=$(adb shell pm path "${PKG}" | grep -v "split")
     PTH=$(echo "${RES}" | grep -Po 'package:\K[^"]+' | tr -d '\r')
@@ -322,6 +367,18 @@ for arg in "$@"; do
         ;;
     ${K_GET_PKG_DATA}=*)
         get_data "${arg#*=}"
+        exit 0
+        ;;
+    ${K_DATA_BACKUP}=*)
+        backup_data "${arg#*=}"
+        exit 0
+        ;;
+    ${K_PREFS}=*)
+        print_prefs "${arg#*=}"
+        exit 0
+        ;;
+    ${K_DATA_RESTORE}=*)
+        restore_data "${arg#*=}"
         exit 0
         ;;
     ${K_UNINSTALL}=*)

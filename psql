@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# $WR/store.wildred.ru/misc/web-db/service/psql
 if [[ "$@" == *"--query-only"* ]]; then
 	echo "psql: {$@}"
 	exit
