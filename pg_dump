@@ -1,7 +1,5 @@
 #!/bin/bash
 
-if [ -z "${DB_USER}" ]; then
-    source $(dirname "$0")/db.properties
-fi
+source $(dirname "$0")/_load_pg_props.sh
 
 /usr/bin/pg_dump --dbname=${DB_DATABASE} --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} "$@"

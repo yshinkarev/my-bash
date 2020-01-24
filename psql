@@ -1,17 +1,14 @@
 #!/bin/bash
 
-# $WR/store.wildred.ru/misc/web-db/service/psql
 if [[ "$@" == *"--query-only"* ]]; then
-	echo "psql: {$@}"
-	exit
+    echo "PSQL: {$@}"
+    exit
 fi
 
 if [[ -z "${PSQL}" ]]; then
     PSQL=/usr/bin/psql
 fi
 
-if [ -z "${DB_USER}" ]; then
-    source $(dirname "$0")/db.properties
-fi
+source $(dirname "$0")/_load_pg_props.sh
 
 ${PSQL} --dbname=${DB_DATABASE} --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} "$@"
