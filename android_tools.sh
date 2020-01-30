@@ -222,6 +222,7 @@ restore_data() {
     fi
     echo "Extrach archive from ${REMOTE_FILE} at android device"
     adb shell "cd /data/data && tar xvf ${REMOTE_FILE}"
+    adb shell "rm -f ${REMOTE_FILE}"
 }
 ########################################
 uninstall_package() {
