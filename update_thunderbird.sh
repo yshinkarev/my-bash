@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PAGE_URL="https://www.thunderbird.net/en-US/thunderbird/all/"
 SEARCH="os=linux64&lang=en-GB"

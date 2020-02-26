@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 REAL_PATH=$(readlink -f "$0")
 PTH=$(dirname "${REAL_PATH}")

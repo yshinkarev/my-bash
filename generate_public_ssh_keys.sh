@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PUBLIC_DIR=public
 mkdir -p ${PUBLIC_DIR}

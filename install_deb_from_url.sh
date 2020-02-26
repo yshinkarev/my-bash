@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # https://askubuntu.com/questions/51854/is-it-possible-to-install-a-deb-from-a-url
 
 URL=$1

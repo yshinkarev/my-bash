@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 read -p "Enter table name: " TABLE_NAME
 # John,Smith,....

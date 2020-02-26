@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 beep() {
-( speaker-test -t sine -f $1 ) & PID=$! 
+( speaker-test -t sine -f $1 ) & PID=$!
 sleep $2s
-kill -9 $PID	
+kill -9 $PID
 }
 
 beep 1000 0.1 > /dev/null 2>&1

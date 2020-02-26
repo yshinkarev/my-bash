@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VERSION=$1
 if [ -z "$VERSION" ]; then
@@ -33,7 +33,7 @@ install() {
 ########################################
 
 clean() {
-	git submodule foreach --recursive "git clean -dfx" && git clean -dfx	
+	git submodule foreach --recursive "git clean -dfx" && git clean -dfx
 }
 
 ########################################
@@ -55,7 +55,7 @@ case "$1" in
 	--getUpdates)
 		getupdates
 		;;
-	*) 
+	*)
 		>&2 echo "Unknown COMMAND"
 	   	;;
 esac

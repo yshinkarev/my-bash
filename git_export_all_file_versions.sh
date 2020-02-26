@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # we'll write all git versions of the file to this folder:
 EXPORT_TO=/tmp/all_versions_exported

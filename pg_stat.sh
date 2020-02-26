@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # https://wiki.postgresql.org/wiki/Disk_Usage
 

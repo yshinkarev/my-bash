@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 INIT_DIR=$(pwd)
 DIRECTORY=$1

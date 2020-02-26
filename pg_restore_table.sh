@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 FILE_NAME=$1
 if [ -z "$FILE_NAME" ]; then

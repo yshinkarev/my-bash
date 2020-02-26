@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo ">> [SUSPEND] Times during current boot"
 journalctl -b 0 | grep "]: Suspending system..."

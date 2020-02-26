@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ -z "${DB_PROP_FILE}" ]; then
     DB_PROP_FILE=$(dirname "$0")/db.properties

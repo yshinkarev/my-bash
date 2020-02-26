@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
 URL=$1

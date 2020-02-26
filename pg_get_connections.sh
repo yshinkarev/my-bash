@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DB_NAME=$1
 if [ -z $DB_NAME ]; then

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 URL=https://telegram.org/dl/desktop/linux
 TARGET_DIR=$1

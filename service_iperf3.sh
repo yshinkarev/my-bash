@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SERVICE=iperf3.service
 SERVICE_FILE=/etc/systemd/system/$SERVICE

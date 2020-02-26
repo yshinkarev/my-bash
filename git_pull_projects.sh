@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function cleanup {
 if [ -n "$SSH_KEY_FILE" ]; then

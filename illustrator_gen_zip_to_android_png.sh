@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ZIPFILE=$1
 if [ -z "$ZIPFILE" ]; then

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SERVICE=send-to-telegram-on-poweron.service
 SERVICE_FILE=/etc/systemd/system/$SERVICE

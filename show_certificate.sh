@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SITE=$1
 if [ -z "$SITE" ]; then

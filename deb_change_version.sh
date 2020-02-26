@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DEBFILE=$1
 if [[ -z "$DEBFILE" ]]; then
@@ -14,7 +14,7 @@ fi
 
 set -e
 function cleanup {
-	rm -rf "$TMPDIR"	
+	rm -rf "$TMPDIR"
 }
 trap cleanup EXIT
 

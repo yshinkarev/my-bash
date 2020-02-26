@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 humanFormat() {
 	echo $(numfmt --to=iec-i --suffix=B --format="%.1f" $1)

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SQL_FILE_NAME=$1;
 if [ -z "$SQL_FILE_NAME" ]; then

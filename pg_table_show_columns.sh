@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # https://dev.mysql.com/doc/refman/5.7/en/resetting-permissions.html
 
 TABLE_NAME=$1

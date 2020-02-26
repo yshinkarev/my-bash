@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 TABLE_NAME=$1
 if [[ -z "$TABLE_NAME" ]]; then

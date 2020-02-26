@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 excludeSize=
 path=$1
