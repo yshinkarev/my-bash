@@ -3,7 +3,7 @@
 ########################################
 
 showHelp() {
-cat << EOF
+    cat <<EOF
 Usage: $(basename $0) [--grep=PATTERN] [--color] [--help]
 Show installed packages and versions by adb
 
@@ -19,39 +19,35 @@ GREP_PATTERN=
 COLOR=0
 
 if [[ "$@" == *"--help"* ]]; then
-	showHelp
-	exit 0
+    showHelp
+    exit 0
 fi
 
 for arg in "$@"; do
-	  case $arg in
-	    --grep=*)
-	    	GREP_PATTERN=${arg#*=}
-	    	shift 1
-	    	;;
-	    --color)
-	    	COLOR=1
-	    	shift 1
-	    	;;
-	    *)
-	      >&2 echo "Unknown argument: $arg"
-	      exit 1
-	      ;;
-	  esac
-	done
+    case $arg in
+    --grep=*)
+        GREP_PATTERN=${arg#*=}
+        shift 1
+        ;;
+    --color)
+        COLOR=1
+        shift 1
+        ;;
+    esac
+done
 
 ########################################
 
-CMD='adb shell "pm list packages -f" | sed -e "s/==//"'
+CMD='adb "$@" shell "pm list packages -f" | sed -e "s/==//"'
 if [ -z "$GREP_PATTERN" ]; then
-  PACKAGES=($(eval ${CMD} | cut -f 2 -d "="))
+    PACKAGES=($(eval ${CMD} | cut -f 2 -d "="))
 else
-	PACKAGES=($(eval ${CMD} | grep -iE "$GREP_PATTERN" | cut -f 2 -d "="))
+    PACKAGES=($(eval ${CMD} | grep -iE "$GREP_PATTERN" | cut -f 2 -d "="))
 fi
 
 if [ ${#PACKAGES[@]} == 0 ]; then
-	echo "No packages found"
-	exit 0
+    echo "No packages found"
+    exit 0
 fi
 
 echo "Found packages: ${#PACKAGES[@]}"
@@ -59,11 +55,11 @@ BL='\033[1;34m'
 NC='\033[0m'
 
 for P in "${PACKAGES[@]}"; do
-	NAME=$(echo "${P//[$'\t\r\n ']}")
-	VERSIONS=($(adb shell dumpsys package $NAME | grep -i versionName | awk -F"=" '{print $2}'))
-	if [ $COLOR == 1 ]; then
-		echo -e "$NAME ${BL}$VERSIONS${NC}"
-	else
-		echo "$NAME $VERSIONS"
-	fi
+    NAME=$(echo "${P//[$'\t\r\n ']/}")
+    VERSIONS=($(adb "$@" shell dumpsys package $NAME | grep -i versionName | awk -F"=" '{print $2}'))
+    if [ $COLOR == 1 ]; then
+        echo -e "$NAME ${BL}$VERSIONS${NC}"
+    else
+        echo "$NAME $VERSIONS"
+    fi
 done
