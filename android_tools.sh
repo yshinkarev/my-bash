@@ -65,7 +65,6 @@ get_connected_devices() {
 ########################################
 get_os_versions() {
     DEVICES=$(get_connected_devices)
-    OUT=()
     for DEV in ${DEVICES}; do
         VER=$(adb -s "${DEV}" shell getprop ro.build.version.release)
         echo "${DEV} ${VER}"
@@ -305,7 +304,11 @@ change_wifi_state() {
 }
 ########################################
 print_dev_props() {
-    adb shell getprop | grep --color=never "model\|version.sdk\|manufacturer\|hardware\|platform\|revision\|serialno\|product.name\|brand"
+    DEVICES=$(get_connected_devices)
+    for DEV in ${DEVICES}; do
+        VER=$(adb -s "${DEV}" shell getprop | grep --color=never "model\|version.sdk\|manufacturer\|hardware\|platform\|revision\|serialno\|product.name\|brand")
+        echo "${VER}"
+    done | column -t
 }
 ########################################
 show_keywords() {
