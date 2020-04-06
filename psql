@@ -6,9 +6,11 @@ if [[ "$@" == *"--query-only"* ]]; then
 fi
 
 if [[ -z "${PSQL}" ]]; then
-    PSQL=/usr/bin/psql
+    # PSQL="docker exec -it postgres psql"
+    PSQL="/usr/bin/psql"
 fi
 
 source $(dirname "$0")/_load_pg_props.sh
 
 ${PSQL} --dbname=${DB_DATABASE} --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} "$@"
+#echo "${PSQL} --dbname=${DB_DATABASE} --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT}"

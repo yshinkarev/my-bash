@@ -3,7 +3,15 @@
 set -e
 
 if [ "$1" == "--help" ]; then
-    echo "$(basename "$0") CONTAINER_NAME IMAGE_NAME VOLUME_MOUNT_POINT [VOLUME_NAME]"
+    cat <<EOF
+Usage:
+    Create volume, container and start container:
+    $(basename "$0") CONTAINER_NAME IMAGE_NAME VOLUME_MOUNT_POINT [VOLUME_NAME]
+
+    Remove exists container and volume:
+    $(basename "$0") CONTAINER_NAME --remove
+EOF
+    exit 0
 fi
 
 CONTAINER_NAME=$1
