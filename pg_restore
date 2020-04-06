@@ -2,4 +2,5 @@
 
 source $(dirname "$0")/_load_pg_props.sh
 
-docker exec -it postgres pg_restore --dbname=${DB_DATABASE} --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} "$@"
+# docker exec -it postgres
+/usr/bin/pg_restore --dbname=${DB_DATABASE} --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} "$@"
