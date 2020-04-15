@@ -57,7 +57,7 @@ find_vm() {
 ########################################
 change_aspect() {
     ASPECT=$1
-    mapfile -t VMS < <( wmctrl -l | grep "Genymotion " )
+    mapfile -t VMS < <( wmctrl -l | grep " - Genymotion" )
     if [[ ${#VMS[@]} -eq 0 ]]; then
 	    echo "No started virtual devices"
 	else
