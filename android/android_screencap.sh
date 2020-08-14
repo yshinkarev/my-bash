@@ -68,7 +68,8 @@ fi
 
 FILE_NAME="$PTH".png
 # adb shell screencap -p | sed 's/\r$//' > $FILE_NAME
-adb shell screencap -p >$FILE_NAME
+# adb shell screencap -p >$FILE_NAME
+adb exec-out screencap -p  > $FILE_NAME
 
 FINAL_FILE_NAME=$FILE_NAME
 if [ $TO_JPG == 1 ]; then
