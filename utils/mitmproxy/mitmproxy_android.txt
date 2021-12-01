@@ -1,0 +1,17 @@
+1)  Ставим brew https://brew.sh (если не macos, смотрим доку)
+2)  Ставим mitmproxy: brew install mitmproxy
+3)  Смотрим, в домашней папке должна появится не пустая папка .mitmproxy.
+    Если не появилась, то запускаем mitmdump и выходим, q > yes
+4)  С эмулятора открываем страницу mitm.it - будет инструкция по установке сертификата
+    У меня из webview не заработало, делал вручную.
+    Закидывыем на эмулятор сертификат: adb push ~/.mitmproxy/mitmproxy-ca-cert.cer /sdcard
+    На эмуляторе через штатное приложение "Files", тапаем на этом файле.
+    Система предложит установить пользовательский сертификат, выбираем, vpn/apps.
+5)  Включаем прокси на эмуляторе. Делать это нужно в настройках wifi эмулятора, а не android studio.
+    Я делаю руками:
+    adb shell settings put global http_proxy 10.0.3.2:8080 (есди это genymotion)
+    adb shell settings put global http_proxy 10.0.2.2:8080 (есди это android emulator)
+    Отключаем прокси через:
+    adb shell settings put global http_proxy :0
+6)  Запускаем mitmproxy или mitmweb.
+    Должно всё работать, при условии, что у вас не самая высокая версия андроида и отключен ssl pinning :-)
