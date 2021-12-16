@@ -1,0 +1,9 @@
+{
+    "mitm_status": 500,
+    "mitm_content":
+    {
+        "error_code": 1,
+        "error_type": "error type",
+        "error_msg": "error message"
+    }
+}

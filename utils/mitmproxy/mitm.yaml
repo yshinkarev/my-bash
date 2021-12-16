@@ -1,0 +1,8 @@
+map_local:
+  urls:
+    https://foo.bar: foo
+    https://foo.bar/error: error
+  headers:
+    Content-Type: "application/json"
+  status: 200
+delay: 0
