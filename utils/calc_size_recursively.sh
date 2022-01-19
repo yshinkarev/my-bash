@@ -14,4 +14,8 @@ if [ -n "$DIRECTORY" ]; then
 	cd $DIRECTORY
 fi
 
-du -a -h --max-depth=1 2> >(grep -v 'cannot access') | sort -hr
+if [ "$(uname)" == "Darwin" ]; then
+    du -h -d 1 2> >(grep -v 'cannot access') | sort -hr
+else
+	du -a -h --max-depth=1 2> >(grep -v 'cannot access') | sort -hr
+fi
