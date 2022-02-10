@@ -29,8 +29,9 @@ ACTION_BOOT_V="ACTION_BOOT_COMPLETED"
 K_FOCUSED_WND="--focused-wnd"
 K_WIFI="--wifi"
 K_DEV_PROPS="--dev-props"
+K_GET_CERT_PIN="--get-cert-pin"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_DATA_BACKUP}=" "${K_DATA_RESTORE}=" "${K_PREFS}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_DATA_BACKUP}=" "${K_DATA_RESTORE}=" "${K_PREFS}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_GET_CERT_PIN}" "${K_HLP}")
 ########################################
 showHelp() {
     cat <<EOF
@@ -52,6 +53,7 @@ Simple wrapper for android.
   ${K_FOCUSED_WND}               Print focused window
   ${K_WIFI}=FLAG                 Enable/disable wifi, FLAG=on|off
   ${K_DEV_PROPS}                 Print device properties
+  ${K_GET_CERT_PIN}              Get certificate pin (sha256) for server
   ${K_KWORDS}                  Print available arguments
   ${K_CMPL_INS}          Configure auto completion for script
   ${K_CMPL_UNINS}        Remove auto completion for script
@@ -311,6 +313,18 @@ print_dev_props() {
     done | column -t
 }
 ########################################
+get_cert_pin() {
+    SERVER=$1
+    if [[ -z ${SERVER} ]]; then
+        echo >&2 "Missing argument: server (for example: mozilla.org)"
+        exit 1
+    fi
+    CERT_FILE=/tmp/${SERVER}.crt
+    echo | openssl s_client -servername "${SERVER}" -connect "${SERVER}":443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "${CERT_FILE}"
+    SHA256=$(openssl x509 -in "${CERT_FILE}" -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64)
+    echo -e "\nsha256/${SHA256}"
+}
+########################################
 show_keywords() {
     KEYWORDS=$(printf " %s" "${ALL_KEYWORDS[@]}")
     echo "${KEYWORDS:1}"
@@ -407,6 +421,10 @@ for arg in "$@"; do
         ;;
     ${K_DEV_PROPS})
         print_dev_props
+        exit 0
+        ;;
+    ${K_GET_CERT_PIN}=*)
+        get_cert_pin "${arg#*=}"
         exit 0
         ;;
     ${K_KWORDS})
