@@ -30,8 +30,9 @@ K_FOCUSED_WND="--focused-wnd"
 K_WIFI="--wifi"
 K_DEV_PROPS="--dev-props"
 K_GET_CERT_PIN="--get-cert-pin"
+K_SYNC_TIME_WITH_HOST="--sync-time-with-host"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_DATA_BACKUP}=" "${K_DATA_RESTORE}=" "${K_PREFS}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_GET_CERT_PIN}" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_DATA_BACKUP}=" "${K_DATA_RESTORE}=" "${K_PREFS}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_GET_CERT_PIN}" "${K_SYNC_TIME_WITH_HOST}" "${K_HLP}")
 ########################################
 showHelp() {
     cat <<EOF
@@ -44,7 +45,7 @@ Simple wrapper for android.
   ${K_GET_FILE}=FILE             Download file from internal storage (uses stetho, dumpsys)
   ${K_GET_PKG_DATA}=PACKAGE_NAME     Download application directory from internal storage (needed su)
   ${K_DATA_BACKUP}=PACKAGE_NAME  Backup application user data (needed root)
-  ${K_DATA_RESTORE}=PACKAGE_NAME  Restore application user data (needed root)
+  ${K_DATA_RESTORE}=PACKAGE_NAME Restore application user data (needed root)
   ${K_PREFS}=PACKAGE_NAME  Print content of preferences (needed root)
   ${K_UNINSTALL}=TARGET          Uninstall application by TARGET, where TARGET is package name or local apk-file
   ${K_PULL_APK}=PACKAGE_NAME     Download apk from device by package name
@@ -54,6 +55,7 @@ Simple wrapper for android.
   ${K_WIFI}=FLAG                 Enable/disable wifi, FLAG=on|off
   ${K_DEV_PROPS}                 Print device properties
   ${K_GET_CERT_PIN}              Get certificate pin (sha256) for server
+  ${K_SYNC_TIME_WITH_HOST}       Sync android device time with host time
   ${K_KWORDS}                  Print available arguments
   ${K_CMPL_INS}          Configure auto completion for script
   ${K_CMPL_UNINS}        Remove auto completion for script
@@ -141,9 +143,9 @@ get_file() {
 }
 ########################################
 move_file() {
-    adb shell "su -c 'chmod 777 $1'"
+    adb shell "chmod 777 $1"
     adb pull $1
-    adb shell "su -c 'rm -f $1'"
+    adb shell "rm -f $1"
 }
 ########################################
 move_extract_file() {
@@ -152,7 +154,7 @@ move_extract_file() {
     REMOTE_PATH=$3
     TAR_FILE=${PKG}.${PREFIX}.tar
     TAR_PATH=/sdcard/${TAR_FILE}
-    adb shell "su -c 'cd ${REMOTE_PATH}/${PREFIX} && tar cvf ${TAR_PATH} . > /dev/null'"
+    adb shell "cd ${REMOTE_PATH}/${PREFIX} && tar cvf ${TAR_PATH} . > /dev/null"
     move_file ${TAR_PATH}
     mkdir ${PKG}/${PREFIX}
     tar -xf ${TAR_FILE} -C ${PKG}/${PREFIX}
@@ -173,10 +175,11 @@ get_data() {
     REMOTE_PATH=/data/data/${PKG}
     TAR_FILE=${PKG}.tar
     TAR_PATH=/sdcard/${TAR_FILE}
-    adb shell "su -c 'cd ${REMOTE_PATH} && tar cvf ${TAR_PATH} . --exclude=cache  --exclude=files > /dev/null'"
+    adb root
+    adb shell "cd ${REMOTE_PATH} && tar cvf ${TAR_PATH} . --exclude=cache  --exclude=files > /dev/null"
     move_file ${TAR_PATH}
     mkdir ${PKG}
-    tar -xf ${TAR_FILE} -C ${PKG}
+    tar -xf "${TAR_FILE}" -C ${PKG}
     rm -f ${TAR_FILE}
 
     move_extract_file cache ${PKG} ${REMOTE_PATH}
@@ -194,7 +197,8 @@ backup_data() {
     FILE_NAME=${PKG}.tar
     REMOTE_FILE=/tmp/${FILE_NAME}
     echo "Archive data to ${REMOTE_FILE} at android device"
-    adb shell "cd /data/data && tar cvf ${REMOTE_FILE} ${PKG}"
+    echo adb shell "cd /data/data && tar cvf ${REMOTE_FILE} ${PKG}"
+    exit 1
     RC=$?
     if [[ ${RC} != 0 ]]; then
         exit ${RC}
@@ -325,6 +329,11 @@ get_cert_pin() {
     echo -e "\nsha256/${SHA256}"
 }
 ########################################
+sync_time_with_host() {
+  CUR_TIME=$(date +%m%d%H%M%Y.%S)
+  adb shell su 0 "date ${CUR_TIME}"
+}
+########################################
 show_keywords() {
     KEYWORDS=$(printf " %s" "${ALL_KEYWORDS[@]}")
     echo "${KEYWORDS:1}"
@@ -425,6 +434,10 @@ for arg in "$@"; do
         ;;
     ${K_GET_CERT_PIN}=*)
         get_cert_pin "${arg#*=}"
+        exit 0
+        ;;
+    ${K_SYNC_TIME_WITH_HOST})
+        sync_time_with_host
         exit 0
         ;;
     ${K_KWORDS})
