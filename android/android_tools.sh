@@ -265,7 +265,7 @@ pull_apk() {
     PKG=$1
 
     RES=$(adb shell pm path "${PKG}" | grep -v "split")
-    PTH=$(echo "${RES}" | grep -Po 'package:\K[^"]+' | tr -d '\r')
+    PTH=$(echo "${RES}" | sed "s/package://" | tr -d '\r')
     if [ -z "${PTH}" ]; then
         echo >&2 "Package not found"
         exit 1
