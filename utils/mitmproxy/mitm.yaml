@@ -2,6 +2,7 @@ map_local:
   urls:
     https://foo.bar: foo
     https://foo.bar/error: error
+    POST https:\/\/foo.bar\?id=.*: id
   headers:
     Content-Type: "application/json"
   status: 200
