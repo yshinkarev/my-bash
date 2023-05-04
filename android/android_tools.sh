@@ -195,16 +195,15 @@ backup_data() {
     check_package_name "$1"
     PKG=$1
     FILE_NAME=${PKG}.tar
-    REMOTE_FILE=/tmp/${FILE_NAME}
+    REMOTE_FILE=$(adb shell mktemp)
     echo "Archive data to ${REMOTE_FILE} at android device"
-    echo adb shell "cd /data/data && tar cvf ${REMOTE_FILE} ${PKG}"
-    exit 1
+    adb shell "cd /data/data && tar cvf ${REMOTE_FILE} ${PKG} > /dev/null"
     RC=$?
     if [[ ${RC} != 0 ]]; then
         exit ${RC}
     fi
     echo "Pull archive to ${FILE_NAME} at local device"
-    adb pull "${REMOTE_FILE}" .
+    adb pull "${REMOTE_FILE}" "${FILE_NAME}"
     adb shell rm -f "${REMOTE_FILE}"
 }
 ########################################
