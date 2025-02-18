@@ -27,14 +27,14 @@ EOF
 ########################################
 
 gradleClean() {
-	gradle clean
+	./gradlew clean
 	rm -rf .gradle
 }
 
 ########################################
 
 gradleBuild() {
-	gradle build
+	./gradlew build
 }
 
 ########################################
