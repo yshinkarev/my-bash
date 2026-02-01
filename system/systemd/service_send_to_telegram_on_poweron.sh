@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# cat /etc/systemd/system/send-to-telegram-on-poweron.service
 SERVICE=send-to-telegram-on-poweron.service
 SERVICE_FILE=/etc/systemd/system/$SERVICE
 
@@ -113,4 +114,4 @@ for arg in "$@"; do
 	done
 ########################################
 
-send_to_telegram.sh --wait-connect=15 --message="System power on" -q
+$(dirname "$(readlink -f "$0")")/send_to_telegram.sh --wait-connect=15 --message="System power on" -q
