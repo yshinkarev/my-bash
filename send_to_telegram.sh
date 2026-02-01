@@ -126,7 +126,7 @@ if [ -z "$SEND_FILE" ]; then
 	fi
 
 	waitConnectionIfNeeded
-	wget --post-data "text=$FROM $TEXT" --output-document=/dev/null "https://api.telegram.org/$BOT_TOKEN/sendmessage?chat_id=$CHAT_ID" $@
+	curl "https://api.telegram.org/$BOT_TOKEN/sendMessage?chat_id=$CHAT_ID" -s -X POST -d "text=$FROM $TEXT" "$@" | jq .
 	exit 0
 fi
 
@@ -146,5 +146,5 @@ fi
 TEXT="$TEXT(path: $DIR_PATH)"
 
 waitConnectionIfNeeded
-curl "https://api.telegram.org/$BOT_TOKEN/senddocument" -F "chat_id=$CHAT_ID" -F "document=@$SEND_FILE" -F "caption=$FROM $TEXT" $@
+curl "https://api.telegram.org/$BOT_TOKEN/senddocument" -s -F "chat_id=$CHAT_ID" -F "document=@$SEND_FILE" -F "caption=$FROM $TEXT" $@ | jq .
 echo
