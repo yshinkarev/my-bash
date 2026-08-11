@@ -4,6 +4,7 @@ DIR=.
 TO_JPG=0
 NAME=
 ADD_TIMESTAMP=0
+TO_CLIPBOARD=0
 
 ########################################
 
@@ -15,6 +16,7 @@ Make screenshot from android device using screencap
   -d,  --directory      Output directory
   -n,  --name           Output filename
   -tj, --to-jpg         Auto convert screenshot to jpeg format
+  -cb, --clipboard      Save screenshot to clipboard instead of file
   -at, --add-timestamp  Add filename suffix with current timestamp
   -h,  --help           Show this help and exit
 EOF
@@ -44,6 +46,9 @@ for arg in "$@"; do
     --to-jpg | -tj)
         TO_JPG=1
         ;;
+    --clipboard | -cb)
+        TO_CLIPBOARD=1
+        ;;
     --add-timestamp | -at)
         ADD_TIMESTAMP=1
         ;;
@@ -56,7 +61,7 @@ done
 
 if [ -z "$NAME" ]; then
     NAME=$(adb shell getprop ro.product.model)
-    NAME=${NAME::-1}
+#    NAME=${NAME::-1}
     NAME=$(echo "${NAME//[$'\t\r\n ']/-}")
 fi
 
@@ -78,4 +83,15 @@ if [ $TO_JPG == 1 ]; then
     rm $FILE_NAME
 fi
 
-echo "$FINAL_FILE_NAME"
+if [ $TO_CLIPBOARD == 1 ]; then
+    CLIPBOARD_FORMAT="«class PNGf»"
+    if [ $TO_JPG == 1 ]; then
+        CLIPBOARD_FORMAT="«class JPEG»"
+    fi
+
+    osascript -e "set the clipboard to (read (POSIX file \"$FINAL_FILE_NAME\") as $CLIPBOARD_FORMAT)"
+    rm "$FINAL_FILE_NAME"
+    echo "Copied screenshot to clipboard"
+else
+    echo "$FINAL_FILE_NAME"
+fi
