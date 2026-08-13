@@ -7,26 +7,30 @@ TO_JPG=0
 NAME=
 ADD_TIMESTAMP=0
 TO_CLIPBOARD=0
-SERIAL=
+UDID=
 FORCE=0
+AUTO_MOUNT=1
+XCODE_APP=
 TEMP_DIR=
 
 show_help() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
-Make a screenshot from an Android device using adb screencap.
+Make a screenshot from a USB-connected iPhone using pymobiledevice3 DVT.
 
   -d,  --directory DIR  Output directory (default: current directory)
-  -n,  --name NAME      Output filename without extension (default: device model)
-  -s,  --serial SERIAL  Target adb device serial
-  -tj, --to-jpg         Convert screenshot to JPEG
+  -n,  --name NAME      Output filename without extension (default: device name)
+  -u,  --udid UDID      Target iPhone UDID
+  -x,  --xcode PATH     Xcode.app used to find a Developer Disk Image
+  -tj, --to-jpg         Convert screenshot to JPEG using macOS sips
   -cb, --clipboard      Copy screenshot to the macOS clipboard instead of saving it
   -at, --add-timestamp  Add current timestamp to the filename
   -f,  --force          Overwrite an existing output file
+       --no-auto-mount  Do not auto-mount a DDI after a failed screenshot attempt
   -h,  --help           Show this help and exit
 
-Values may also be passed with '=' for backward compatibility:
-  --directory=/tmp --name=screenshot --serial=SERIAL
+Values may also be passed with '=':
+  --directory=/tmp --name=screenshot --udid=UDID --xcode=/Applications/Xcode.app
 EOF
 }
 
@@ -82,6 +86,47 @@ APPLESCRIPT
     fi
 }
 
+discover_usb_udids() {
+    local discovered=
+    local simple_list=
+
+    if command -v idevice_id >/dev/null 2>&1; then
+        discovered=$(idevice_id -l 2>/dev/null || true)
+    fi
+
+    if [[ -z "$discovered" ]]; then
+        simple_list=$(pymobiledevice3 usbmux list --usb --simple 2>/dev/null || true)
+        discovered=$(printf '%s\n' "$simple_list" \
+            | tr ',' '\n' \
+            | sed -E 's/[]["[:space:]]//g; /^$/d')
+    fi
+
+    printf '%s\n' "$discovered" | awk 'NF && !seen[$0]++ { print }'
+}
+
+take_screenshot() {
+    local output_file=$1
+    local signature
+
+    rm -f -- "$output_file"
+    pymobiledevice3 developer dvt screenshot "$output_file" --udid "$UDID" || return 1
+    [[ -s "$output_file" ]] || return 1
+
+    signature=$(LC_ALL=C od -An -tx1 -N8 "$output_file" | tr -d '[:space:]')
+    [[ "$signature" == "89504e470d0a1a0a" ]]
+}
+
+mount_developer_image() {
+    local mount_command=(pymobiledevice3 mounter auto-mount --udid "$UDID")
+
+    if [[ -n "$XCODE_APP" ]]; then
+        mount_command+=(--xcode "$XCODE_APP")
+    fi
+
+    echo "Mounting Developer Disk Image for $UDID..." >&2
+    "${mount_command[@]}"
+}
+
 while (( $# > 0 )); do
     case "$1" in
     -h | --help)
@@ -106,13 +151,22 @@ while (( $# > 0 )); do
         NAME=${1#*=}
         shift
         ;;
-    -s | --serial)
+    -u | --udid)
         (( $# >= 2 )) || die "$1 requires a value"
-        SERIAL=$2
+        UDID=$2
         shift 2
         ;;
-    -s=* | --serial=*)
-        SERIAL=${1#*=}
+    -u=* | --udid=*)
+        UDID=${1#*=}
+        shift
+        ;;
+    -x | --xcode)
+        (( $# >= 2 )) || die "$1 requires a value"
+        XCODE_APP=$2
+        shift 2
+        ;;
+    -x=* | --xcode=*)
+        XCODE_APP=${1#*=}
         shift
         ;;
     -tj | --to-jpg)
@@ -131,6 +185,10 @@ while (( $# > 0 )); do
         FORCE=1
         shift
         ;;
+    --no-auto-mount)
+        AUTO_MOUNT=0
+        shift
+        ;;
     --)
         shift
         (( $# == 0 )) || die "positional arguments are not supported: $*"
@@ -142,39 +200,36 @@ while (( $# > 0 )); do
 done
 
 [[ -n "$DIR" ]] || die "output directory must not be empty"
+require_command pymobiledevice3
 
-require_command adb
+if [[ -n "$XCODE_APP" ]]; then
+    [[ -d "$XCODE_APP" ]] || die "Xcode application not found: $XCODE_APP"
+    [[ -d "$XCODE_APP/Contents/Developer" ]] || die "invalid Xcode application: $XCODE_APP"
+fi
 
-ADB_DEVICES_OUTPUT=$(adb devices -l) || die "failed to query adb devices"
-
-if [[ -z "$SERIAL" ]]; then
-    AVAILABLE_DEVICES=$(printf '%s\n' "$ADB_DEVICES_OUTPUT" | awk '$2 == "device" { print $1 }')
+if [[ -z "$UDID" ]]; then
+    AVAILABLE_DEVICES=$(discover_usb_udids)
     DEVICE_COUNT=$(printf '%s\n' "$AVAILABLE_DEVICES" | awk 'NF { count++ } END { print count + 0 }')
 
     case "$DEVICE_COUNT" in
     0)
-        printf '%s\n' "$ADB_DEVICES_OUTPUT" >&2
-        die "no ready Android devices found"
+        die "no USB-connected iPhone found; unlock it and confirm trust"
         ;;
     1)
-        SERIAL=$AVAILABLE_DEVICES
+        UDID=$AVAILABLE_DEVICES
         ;;
     *)
-        printf '%s\n' "$ADB_DEVICES_OUTPUT" >&2
-        die "multiple Android devices found; select one with --serial"
+        printf 'Connected iPhone UDIDs:\n%s\n' "$AVAILABLE_DEVICES" >&2
+        die "multiple iPhones found; select one with --udid"
         ;;
     esac
 fi
 
-ADB=(adb -s "$SERIAL")
-DEVICE_STATE=$("${ADB[@]}" get-state 2>/dev/null) || die "device is unavailable: $SERIAL"
-[[ "$DEVICE_STATE" == "device" ]] || die "device is not ready: $SERIAL ($DEVICE_STATE)"
-
 if [[ -z "$NAME" ]]; then
-    NAME=$("${ADB[@]}" shell getprop ro.product.model) || die "failed to read device model: $SERIAL"
-    NAME=${NAME//$'\r'/}
-    NAME=${NAME//$'\n'/}
-    [[ -n "$NAME" ]] || NAME=$SERIAL
+    if command -v ideviceinfo >/dev/null 2>&1; then
+        NAME=$(ideviceinfo -u "$UDID" -k DeviceName 2>/dev/null || true)
+    fi
+    [[ -n "$NAME" ]] || NAME=iPhone
 fi
 
 NAME=$(sanitize_name "$NAME")
@@ -188,13 +243,14 @@ fi
 FORMAT=png
 if (( TO_JPG )); then
     FORMAT=jpg
+    require_command sips
 fi
 
 FINAL_FILE_NAME="${BASE_PATH}.${FORMAT}"
 
 if (( TO_CLIPBOARD )); then
     require_command osascript
-    TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/android-screencap.XXXXXX")
+    TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/ios-screencap.XXXXXX")
 else
     mkdir -p -- "$DIR"
     [[ -d "$DIR" && -w "$DIR" ]] || die "output directory is not writable: $DIR"
@@ -203,33 +259,29 @@ else
         die "output file already exists (use --force to overwrite): $FINAL_FILE_NAME"
     fi
 
-    TEMP_DIR=$(mktemp -d "$DIR/.android-screencap.XXXXXX")
+    TEMP_DIR=$(mktemp -d "$DIR/.ios-screencap.XXXXXX")
 fi
 
 trap cleanup EXIT
 
 PNG_FILE=$TEMP_DIR/screenshot.png
-if ! "${ADB[@]}" exec-out screencap -p >"$PNG_FILE"; then
-    die "failed to capture screenshot from device: $SERIAL"
-fi
+if ! take_screenshot "$PNG_FILE"; then
+    if (( ! AUTO_MOUNT )); then
+        die "failed to capture screenshot; check USB connection, trust, Developer Mode and mounted DDI"
+    fi
 
-[[ -s "$PNG_FILE" ]] || die "adb returned an empty screenshot"
-PNG_SIGNATURE=$(LC_ALL=C od -An -tx1 -N8 "$PNG_FILE" | tr -d '[:space:]')
-[[ "$PNG_SIGNATURE" == "89504e470d0a1a0a" ]] || die "adb output is not a valid PNG screenshot"
+    echo "Initial screenshot failed; trying to mount a compatible Developer Disk Image..." >&2
+    mount_developer_image || die "failed to mount a compatible Developer Disk Image"
+    take_screenshot "$PNG_FILE" \
+        || die "failed to capture screenshot after mounting DDI; unlock the iPhone and try again"
+fi
 
 READY_FILE=$PNG_FILE
 if (( TO_JPG )); then
     JPG_FILE=$TEMP_DIR/screenshot.jpg
-
-    if command -v magick >/dev/null 2>&1; then
-        magick "$PNG_FILE" "$JPG_FILE" || die "failed to convert screenshot to JPEG"
-    elif command -v convert >/dev/null 2>&1; then
-        convert "$PNG_FILE" "$JPG_FILE" || die "failed to convert screenshot to JPEG"
-    else
-        die "JPEG conversion requires ImageMagick (magick or convert)"
-    fi
-
-    [[ -s "$JPG_FILE" ]] || die "JPEG converter returned an empty file"
+    sips -s format jpeg "$PNG_FILE" --out "$JPG_FILE" >/dev/null \
+        || die "failed to convert screenshot to JPEG"
+    [[ -s "$JPG_FILE" ]] || die "sips returned an empty JPEG file"
     READY_FILE=$JPG_FILE
 fi
 
