@@ -1,0 +1,5 @@
+# HTTP proxy IPv4 address and port (plain values, without quotes).
+# A host machine IP is mapped to 10.0.2.2 for Android Emulator; the port is kept.
+# Use the host LAN IP so physical devices can also reach the proxy.
+PROXY_IP=192.168.0.2
+PROXY_PORT=8888

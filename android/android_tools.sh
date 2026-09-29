@@ -28,11 +28,12 @@ ACTION_BOOT="boot"
 ACTION_BOOT_V="ACTION_BOOT_COMPLETED"
 K_FOCUSED_WND="--focused-wnd"
 K_WIFI="--wifi"
+K_PROXY="--proxy"
 K_DEV_PROPS="--dev-props"
 K_GET_CERT_PIN="--get-cert-pin"
 K_SYNC_TIME_WITH_HOST="--sync-time-with-host"
 K_HLP="--help"
-ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_DATA_BACKUP}=" "${K_DATA_RESTORE}=" "${K_PREFS}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_DEV_PROPS}" "${K_GET_CERT_PIN}" "${K_SYNC_TIME_WITH_HOST}" "${K_HLP}")
+ALL_KEYWORDS=("${K_GET_OS_VER}" "${K_DEVICES}" "${K_KWORDS}" "${K_CMPL_INS}" "${K_CMPL_UNINS}" "${K_GET_DB}=" "${K_GET_FILE}=" "${K_GET_PKG_DATA}=" "${K_DATA_BACKUP}=" "${K_DATA_RESTORE}=" "${K_PREFS}=" "${K_UNINSTALL}=" "${K_PULL_APK}=" "${K_SEND_ACTION}=" "${K_FOCUSED_WND}" "${K_WIFI}=" "${K_PROXY}=on" "${K_PROXY}=off" "${K_DEV_PROPS}" "${K_GET_CERT_PIN}" "${K_SYNC_TIME_WITH_HOST}" "${K_HLP}")
 ########################################
 showHelp() {
     cat <<EOF
@@ -53,6 +54,8 @@ Simple wrapper for android.
                               Standart values: ${ACTION_BOOT} (${ACTION_BOOT_V})
   ${K_FOCUSED_WND}               Print focused window
   ${K_WIFI}=FLAG                 Enable/disable wifi, FLAG=on|off
+  ${K_PROXY}=FLAG                Enable/disable HTTP proxy on all connected devices, FLAG=on|off
+                                Config: android_tools_proxy.conf next to this script
   ${K_DEV_PROPS}                 Print device properties
   ${K_GET_CERT_PIN}              Get certificate pin (sha256) for server
   ${K_SYNC_TIME_WITH_HOST}       Sync android device time with host time
@@ -308,6 +311,101 @@ change_wifi_state() {
     fi
 }
 ########################################
+# Config is plain KEY=value data, not executable shell code.
+load_proxy_config() {
+    local script_path config line key value octet
+    script_path=$(realpath "${BASH_SOURCE[0]}") || return 1
+    config="$(dirname "$script_path")/android_tools_proxy.conf"
+    if [[ ! -f "$config" ]]; then
+        echo >&2 "Missing $config; copy $config.example and edit PROXY_IP / PROXY_PORT."
+        return 1
+    fi
+    PROXY_IP=""
+    PROXY_PORT=""
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line=${line%%#*}
+        line=${line//[[:space:]]/}
+        [[ -z "$line" ]] && continue
+        key=${line%%=*}
+        value=${line#*=}
+        case "$key" in
+            PROXY_IP) PROXY_IP=$value ;;
+            PROXY_PORT) PROXY_PORT=$value ;;
+            *) echo >&2 "Unknown proxy config entry: $key"; return 1 ;;
+        esac
+    done < "$config"
+    if [[ ! "$PROXY_IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+        echo >&2 "PROXY_IP must be an IPv4 address."
+        return 1
+    fi
+    for octet in ${PROXY_IP//./ }; do
+        if (( 10#$octet > 255 )) || [[ "$octet" != "0" && "$octet" == 0* ]]; then
+            echo >&2 "Invalid PROXY_IP: $PROXY_IP"
+            return 1
+        fi
+    done
+    if [[ ! "$PROXY_PORT" =~ ^[0-9]{1,5}$ ]] ||
+        (( 10#$PROXY_PORT < 1 || 10#$PROXY_PORT > 65535 )); then
+        echo >&2 "PROXY_PORT must be between 1 and 65535."
+        return 1
+    fi
+    PROXY_PORT=$((10#$PROXY_PORT))
+}
+########################################
+proxy_is_local() {
+    [[ "$PROXY_IP" == 127.* ]] && return 0
+    local addresses
+    if command -v ifconfig >/dev/null 2>&1; then
+        addresses=$(ifconfig | awk '$1 == "inet" {sub(/^addr:/, "", $2); print $2}') || return 1
+    elif command -v ip >/dev/null 2>&1; then
+        addresses=$(ip -o -4 addr show | awk '{sub(/\/.*/, "", $4); print $4}') || return 1
+    else
+        echo >&2 "Cannot detect host IP addresses: install ifconfig or ip."
+        return 2
+    fi
+    [[ $'\n'"$addresses"$'\n' == *$'\n'"$PROXY_IP"$'\n'* ]]
+}
+########################################
+change_proxy_state() {
+    local flag=$1 devices device endpoint local_proxy=0 result=0
+    local PROXY_IP PROXY_PORT
+    case "$flag" in
+        on)
+            load_proxy_config || return 1
+            proxy_is_local
+            case $? in
+                0) local_proxy=1 ;;
+                1) ;;
+                *) return 1 ;;
+            esac
+            ;;
+        off) ;;
+        *) echo >&2 "Unknown proxy flag. Expected on|off"; return 1 ;;
+    esac
+    devices=$(adb devices) || return 1
+    devices=$(printf '%s\n' "$devices" | awk '$2 == "device" {print $1}')
+    if [[ -z "$devices" ]]; then
+        echo >&2 "No authorized online Android devices connected."
+        return 1
+    fi
+    for device in $devices; do
+        endpoint=:0
+        if [[ "$flag" == on ]]; then
+            endpoint="$PROXY_IP:$PROXY_PORT"
+            if [[ "$device" == emulator-* && "$local_proxy" == 1 ]]; then
+                endpoint="10.0.2.2:$PROXY_PORT"
+            fi
+        fi
+        if adb -s "$device" shell settings put global http_proxy "$endpoint"; then
+            echo "$device: proxy $flag ($endpoint)"
+        else
+            echo >&2 "$device: failed to set proxy $flag"
+            result=1
+        fi
+    done
+    return "$result"
+}
+########################################
 print_dev_props() {
     DEVICES=$(get_connected_devices)
     for DEV in ${DEVICES}; do
@@ -426,6 +524,10 @@ for arg in "$@"; do
     ${K_WIFI}=*)
         change_wifi_state "${arg#*=}"
         exit 0
+        ;;
+    ${K_PROXY}=*)
+        change_proxy_state "${arg#*=}"
+        exit $?
         ;;
     ${K_DEV_PROPS})
         print_dev_props
