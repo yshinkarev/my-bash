@@ -148,7 +148,12 @@ require_command adb
 ADB_DEVICES_OUTPUT=$(adb devices -l) || die "failed to query adb devices"
 
 if [[ -z "$SERIAL" ]]; then
-    AVAILABLE_DEVICES=$(printf '%s\n' "$ADB_DEVICES_OUTPUT" | awk '$2 == "device" { print $1 }')
+    AVAILABLE_DEVICES=$(adb devices | awk '
+        NR > 1 && $NF == "device" {
+            sub(/[[:space:]]+device[[:space:]]*$/, "")
+            print
+        }
+    ') || die "failed to query ready adb devices"
     DEVICE_COUNT=$(printf '%s\n' "$AVAILABLE_DEVICES" | awk 'NF { count++ } END { print count + 0 }')
 
     case "$DEVICE_COUNT" in
